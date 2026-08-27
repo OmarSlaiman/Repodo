@@ -1,14 +1,15 @@
-import { OWNERS } from '../model.js'
+import { OWNERS, WAIT_CAUSES, DEFAULT_CAUSE, num } from '../model.js'
 
-function NumberField({ id, label, unit, value, onChange, step, max }) {
+function NumberField({ id, label, unit, value, onChange, step, title }) {
   return (
     <div className="field">
-      <label htmlFor={id}>{label}</label>
+      <label htmlFor={id} title={title}>
+        {label}
+      </label>
       <input
         id={id}
         type="number"
         min="0"
-        max={max}
         step={step}
         value={value}
         onChange={(e) => onChange(e.target.value)}
@@ -20,6 +21,9 @@ function NumberField({ id, label, unit, value, onChange, step, max }) {
 }
 
 function Step({ step, index, total, onChange, onMove, onRemove, onSetValueMoment }) {
+  const hasWait = num(step.waitDaysBefore) > 0
+  const cause = step.waitCause || DEFAULT_CAUSE
+
   return (
     <li className={'step' + (step.isValueMoment ? ' is-value' : '')}>
       <div className="step-index" aria-hidden="true">
@@ -57,6 +61,7 @@ function Step({ step, index, total, onChange, onMove, onRemove, onSetValueMoment
             step="0.5"
             value={step.processHours}
             onChange={(v) => onChange({ processHours: v })}
+            title="Den tid, hvor nogen faktisk arbejder på opgaven"
           />
 
           <NumberField
@@ -66,7 +71,27 @@ function Step({ step, index, total, onChange, onMove, onRemove, onSetValueMoment
             step="0.5"
             value={step.waitDaysBefore}
             onChange={(v) => onChange({ waitDaysBefore: v })}
+            title="Kalenderdage, hvor opgaven ligger stille, før dette trin går i gang"
           />
+
+          {/* Aarsagen vises foerst, naar der faktisk er ventetid at forklare. */}
+          {hasWait ? (
+            <div className="field">
+              <label htmlFor={'wc-' + step.id}>Fordi</label>
+              <select
+                id={'wc-' + step.id}
+                className="cause-select"
+                value={cause}
+                onChange={(e) => onChange({ waitCause: e.target.value })}
+              >
+                {WAIT_CAUSES.map((c) => (
+                  <option key={c.key} value={c.key} title={c.meaning}>
+                    {c.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ) : null}
 
           <button
             type="button"
@@ -121,6 +146,12 @@ export default function StepList({ steps, onChangeStep, onMoveStep, onRemoveStep
         <p className="note">Ret trinnene, så de matcher jeres eget. Alt regnes om med det samme.</p>
       </div>
       <div className="card-body">
+        <p className="hint">
+          Ved du det ikke præcist, så gæt. Et kvalificeret gæt er bedre end ingen kortlægning, og
+          du kan rette det senere. Feltet <b>fordi</b> beskriver, hvorfor opgaven lå stille — det
+          er årsagen, ikke ejeren, der afgør, hvad man kan gøre ved ventetiden.
+        </p>
+
         {steps.length === 0 ? (
           <p className="hint">
             Der er ingen trin. Tilføj det første, eller hent eksemplet tilbage for at se, hvordan

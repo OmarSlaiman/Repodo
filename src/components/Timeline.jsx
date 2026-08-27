@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { OWNER_LABEL, buildBlocks } from '../model.js'
+import { OWNER_LABEL, buildBlocks, causeOf } from '../model.js'
 import { fmt, dayWord } from '../format.js'
 
 const PAD_LEFT_LANES = 92
@@ -69,12 +69,15 @@ function niceTickStep(totalDays, targetTicks) {
   return candidates.find((c) => c >= raw) ?? 1000
 }
 
-export default function Timeline({ steps, metrics, svgRef }) {
+export default function Timeline({ steps, metrics, svgRef, adoptionDays = null }) {
   const [containerRef, containerWidth] = useContainerWidth()
   const [showLanes, setShowLanes] = useState(true)
 
   const blocks = buildBlocks(steps)
   const total = metrics.totalLeadTimeDays
+  // Adoptionsperioden ligger efter go-live, men hoerer med paa den samme akse.
+  const adoption = Number.isFinite(adoptionDays) && adoptionDays > 0 ? adoptionDays : 0
+  const span = total + adoption
 
   const lanes = showLanes
     ? ['os', 'kunde', 'tredjepart'].filter((o) => steps.some((s) => s.owner === o))
@@ -88,7 +91,7 @@ export default function Timeline({ steps, metrics, svgRef }) {
   const height = TOP + lanes.length * LANE_H + (lanes.length - 1) * LANE_GAP + AXIS_H
   const lanesBottom = TOP + lanes.length * LANE_H + (lanes.length - 1) * LANE_GAP
 
-  const pxPerDay = total > 0 ? chartW / total : 0
+  const pxPerDay = span > 0 ? chartW / span : 0
   const x = (days) => padLeft + days * pxPerDay
   const laneY = (i) => TOP + i * (LANE_H + LANE_GAP)
 
@@ -108,9 +111,9 @@ export default function Timeline({ steps, metrics, svgRef }) {
     )
   }
 
-  const tickStep = niceTickStep(total, Math.max(4, Math.min(8, Math.floor(chartW / 110))))
+  const tickStep = niceTickStep(span, Math.max(4, Math.min(8, Math.floor(chartW / 110))))
   const ticks = []
-  for (let d = 0; d <= total + 1e-9; d += tickStep) ticks.push(Math.round(d * 1000) / 1000)
+  for (let d = 0; d <= span + 1e-9; d += tickStep) ticks.push(Math.round(d * 1000) / 1000)
 
   // Overleveringer: hvor ejerskabet skifter mellem to trin i traek.
   const handoffMarks = []
@@ -231,7 +234,16 @@ export default function Timeline({ steps, metrics, svgRef }) {
               const centered = isWork && bw < 64
               const tip = isWork
                 ? b.name + ' · ' + fmt(b.hours, 1) + ' timers arbejde · ' + OWNER_LABEL[b.owner]
-                : 'Ventetid før "' + b.name + '" · ' + fmt(b.days, 1) + ' ' + dayWord(b.days) + ' · ' + OWNER_LABEL[b.owner]
+                : 'Ventetid før "' +
+                  b.name +
+                  '" · ' +
+                  fmt(b.days, 1) +
+                  ' ' +
+                  dayWord(b.days) +
+                  ' · ' +
+                  OWNER_LABEL[b.owner] +
+                  ' · årsag: ' +
+                  causeOf(b.cause).label.toLowerCase()
               return (
                 <g key={i}>
                   <title>{tip}</title>
@@ -258,6 +270,42 @@ export default function Timeline({ steps, metrics, svgRef }) {
                 </g>
               )
             })}
+
+            {adoption > 0 ? (
+              <g>
+                <title>
+                  {'Adoptionsperiode · ' +
+                    fmt(adoption, adoption % 1 === 0 ? 0 : 1) +
+                    ' ' +
+                    dayWord(adoption) +
+                    ' fra go-live til løsningen bruges i det daglige'}
+                </title>
+                <rect
+                  x={x(total)}
+                  y={TOP}
+                  width={Math.max(x(span) - x(total), 2)}
+                  height={lanesBottom - TOP}
+                  fill="#F2F4F8"
+                  stroke={NAVY}
+                  strokeWidth="1"
+                  strokeDasharray="5 4"
+                  opacity="0.85"
+                  rx="3"
+                />
+                {x(span) - x(total) > 120 ? (
+                  <text
+                    x={(x(total) + x(span)) / 2}
+                    y={TOP + (lanesBottom - TOP) / 2 + 4}
+                    textAnchor="middle"
+                    fontSize="12"
+                    fill={NAVY}
+                    fontWeight="600"
+                  >
+                    Adoptionsperiode
+                  </text>
+                ) : null}
+              </g>
+            ) : null}
 
             {ttvX !== null ? (
               <g>
@@ -319,6 +367,12 @@ export default function Timeline({ steps, metrics, svgRef }) {
             <i className="swatch" style={{ background: WAIT_FILL, borderColor: WAIT_STROKE }} /> Ventetid
           </span>
           {showLanes ? <span>Stiplet lodret linje: overlevering</span> : null}
+          {adoption > 0 ? (
+            <span>
+              <i className="swatch" style={{ background: '#F2F4F8', borderColor: NAVY, borderStyle: 'dashed' }} />{' '}
+              Adoptionsperiode
+            </span>
+          ) : null}
           <span>Hold musen over en blok for detaljer</span>
         </div>
 

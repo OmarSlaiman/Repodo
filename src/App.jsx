@@ -2,8 +2,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   EXAMPLE_STEPS,
   DEFAULT_READINESS,
+  DEFAULT_CAUSE,
   computeMetrics,
   computeReadiness,
+  computeImprovement,
+  computeAdoption,
   newId,
 } from './model.js'
 import { encodeStateToHash, readStateFromHash, saveLocal, readLocal } from './persist.js'
@@ -13,24 +16,30 @@ import Metrics from './components/Metrics.jsx'
 import Timeline from './components/Timeline.jsx'
 import WaitDistribution from './components/WaitDistribution.jsx'
 import Readiness from './components/Readiness.jsx'
+import AdoptionGap from './components/AdoptionGap.jsx'
 
 const freshExample = () => EXAMPLE_STEPS.map((s) => ({ ...s }))
 
 // Foerst et delt link, saa gemt arbejde, ellers eksemplet. Brugeren moeder aldrig en tom formular.
+function restored(loaded, source) {
+  return {
+    steps: loaded.steps,
+    readiness: loaded.readiness ?? DEFAULT_READINESS,
+    adoptionDays: loaded.adoptionDays ?? null,
+    source,
+  }
+}
+
 function initialState() {
   const shared = readStateFromHash()
-  if (shared && shared.steps.length) {
-    return { steps: shared.steps, readiness: shared.readiness ?? DEFAULT_READINESS, source: 'link' }
-  }
+  if (shared && shared.steps.length) return restored(shared, 'link')
   const stored = readLocal()
-  if (stored && stored.steps.length) {
-    return { steps: stored.steps, readiness: stored.readiness ?? DEFAULT_READINESS, source: 'gemt' }
-  }
-  return { steps: freshExample(), readiness: DEFAULT_READINESS, source: 'eksempel' }
+  if (stored && stored.steps.length) return restored(stored, 'gemt')
+  return { steps: freshExample(), readiness: DEFAULT_READINESS, adoptionDays: null, source: 'eksempel' }
 }
 
 export default function App() {
-  const [{ steps, readiness, source }, setState] = useState(initialState)
+  const [{ steps, readiness, adoptionDays, source }, setState] = useState(initialState)
   const [readinessOpen, setReadinessOpen] = useState(false)
   const [status, setStatus] = useState('')
   const svgRef = useRef(null)
@@ -64,6 +73,14 @@ export default function App() {
     [clearHash]
   )
 
+  const setAdoptionDays = useCallback(
+    (next) => {
+      clearHash()
+      setState((prev) => ({ ...prev, adoptionDays: next === '' ? null : next }))
+    },
+    [clearHash]
+  )
+
   const say = useCallback((message) => {
     setStatus(message)
     clearTimeout(statusTimer.current)
@@ -76,24 +93,20 @@ export default function App() {
   useEffect(() => {
     const onHashChange = () => {
       const shared = readStateFromHash()
-      if (shared && shared.steps.length) {
-        setState({
-          steps: shared.steps,
-          readiness: shared.readiness ?? DEFAULT_READINESS,
-          source: 'link',
-        })
-      }
+      if (shared && shared.steps.length) setState(restored(shared, 'link'))
     }
     window.addEventListener('hashchange', onHashChange)
     return () => window.removeEventListener('hashchange', onHashChange)
   }, [])
 
   useEffect(() => {
-    saveLocal({ steps, readiness })
-  }, [steps, readiness])
+    saveLocal({ steps, readiness, adoptionDays })
+  }, [steps, readiness, adoptionDays])
 
   const metrics = useMemo(() => computeMetrics(steps), [steps])
   const readinessResult = useMemo(() => computeReadiness(metrics, readiness), [metrics, readiness])
+  const improvement = useMemo(() => computeImprovement(metrics), [metrics])
+  const adoption = useMemo(() => computeAdoption(metrics, adoptionDays), [metrics, adoptionDays])
 
   const changeStep = useCallback(
     (id, patch) => setSteps((list) => list.map((s) => (s.id === id ? { ...s, ...patch } : s))),
@@ -125,19 +138,27 @@ export default function App() {
     () =>
       setSteps((list) => [
         ...list,
-        { id: newId(), name: '', owner: 'os', processHours: 1, waitDaysBefore: 0, isValueMoment: false },
+        {
+          id: newId(),
+          name: '',
+          owner: 'os',
+          processHours: 1,
+          waitDaysBefore: 0,
+          waitCause: DEFAULT_CAUSE,
+          isValueMoment: false,
+        },
       ]),
     [setSteps]
   )
 
   const reset = useCallback(() => {
-    setState({ steps: freshExample(), readiness: DEFAULT_READINESS, source: 'eksempel' })
+    setState({ steps: freshExample(), readiness: DEFAULT_READINESS, adoptionDays: null, source: 'eksempel' })
     if (window.location.hash) history.replaceState(null, '', window.location.pathname + window.location.search)
     say('Eksemplet er hentet tilbage.')
   }, [say])
 
   const share = useCallback(async () => {
-    const hash = encodeStateToHash({ steps, readiness })
+    const hash = encodeStateToHash({ steps, readiness, adoptionDays })
     if (!hash) return say('Linket kunne ikke laves.')
     const url = window.location.origin + window.location.pathname + window.location.search + hash
     history.replaceState(null, '', hash)
@@ -147,7 +168,7 @@ export default function App() {
     } catch {
       say('Linket står nu i adresselinjen og kan kopieres derfra.')
     }
-  }, [steps, readiness, say])
+  }, [steps, readiness, adoptionDays, say])
 
   const exportSvg = useCallback(() => {
     say(downloadSvg(svgRef.current) ? 'Tidslinjen er hentet som SVG.' : 'Der er ingen tidslinje at hente.')
@@ -197,11 +218,16 @@ export default function App() {
         </div>
 
         <div className="section">
-          <Timeline steps={steps} metrics={metrics} svgRef={svgRef} />
+          <Timeline
+            steps={steps}
+            metrics={metrics}
+            svgRef={svgRef}
+            adoptionDays={adoption.days}
+          />
         </div>
 
         <div className="section">
-          <WaitDistribution metrics={metrics} />
+          <WaitDistribution metrics={metrics} improvement={improvement} />
         </div>
 
         <div className="section">
@@ -215,6 +241,15 @@ export default function App() {
           />
         </div>
 
+        <div className="section">
+          <AdoptionGap
+            metrics={metrics}
+            adoption={adoption}
+            adoptionDays={adoptionDays}
+            onChange={setAdoptionDays}
+          />
+        </div>
+
         <div className="toolbar" style={{ marginTop: 20 }}>
           <button type="button" className="btn" onClick={share}>
             Kopiér link til dette forløb
@@ -224,6 +259,9 @@ export default function App() {
           </button>
           <button type="button" className="btn" onClick={exportPng}>
             Hent som PNG
+          </button>
+          <button type="button" className="btn" onClick={() => window.print()}>
+            Print eller gem som PDF
           </button>
           <span className="status-msg" role="status" aria-live="polite">
             {status}

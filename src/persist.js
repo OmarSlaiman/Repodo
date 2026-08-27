@@ -1,5 +1,7 @@
 // Persistens og deling. Begge dele er bekvemmeligheder: fejler de, koerer app'en videre.
 
+import { CAUSE_BY_KEY, DEFAULT_CAUSE, isBlank } from './model.js'
+
 const STORAGE_KEY = 'onboarding-flow-analyser/v1'
 
 function encodeUtf8ToBase64(str) {
@@ -19,11 +21,20 @@ function decodeBase64ToUtf8(b64) {
 // Kort noeglenavne, saa link-laengden holdes nede.
 function pack(state) {
   return {
-    s: state.steps.map((st) => [st.name, st.owner, Number(st.processHours) || 0, Number(st.waitDaysBefore) || 0, st.isValueMoment ? 1 : 0]),
+    s: state.steps.map((st) => [
+      st.name,
+      st.owner,
+      Number(st.processHours) || 0,
+      Number(st.waitDaysBefore) || 0,
+      st.isValueMoment ? 1 : 0,
+      st.waitCause || DEFAULT_CAUSE,
+    ]),
+    a: isBlank(state.adoptionDays) ? null : Number(state.adoptionDays) || 0,
     r: state.readiness,
   }
 }
 
+// Aeldre links har kun fem felter pr. traek og intet adoptionstal. De skal stadig virke.
 function unpack(raw) {
   if (!raw || !Array.isArray(raw.s)) return null
   const steps = raw.s.map((row, i) => ({
@@ -33,8 +44,13 @@ function unpack(raw) {
     processHours: Number(row[2]) || 0,
     waitDaysBefore: Number(row[3]) || 0,
     isValueMoment: !!row[4],
+    waitCause: CAUSE_BY_KEY[row[5]] ? row[5] : DEFAULT_CAUSE,
   }))
-  return { steps, readiness: raw.r ?? null }
+  return {
+    steps,
+    readiness: raw.r ?? null,
+    adoptionDays: raw.a === null || raw.a === undefined ? null : Number(raw.a) || 0,
+  }
 }
 
 export function encodeStateToHash(state) {

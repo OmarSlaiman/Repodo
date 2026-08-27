@@ -306,15 +306,30 @@ section { scroll-margin-top: 20px; }
 .waste-list li {
   display: grid;
   grid-template-columns: 24px minmax(0, 1fr) auto;
-  gap: 12px;
-  padding: 11px 0;
+  gap: 4px 12px;
+  padding: 14px 0;
   border-top: 1px solid var(--border);
-  align-items: baseline;
+  align-items: start;
 }
-.waste-rank { color: var(--muted); font-size: 12.5px; font-variant-numeric: tabular-nums; }
-.waste-name { font-size: 14px; }
-.waste-meta { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
-.waste-days { font-size: 17px; font-weight: 620; color: var(--navy); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.waste-rank { color: var(--muted); font-size: 12.5px; font-variant-numeric: tabular-nums; padding-top: 2px; }
+.waste-body { min-width: 0; }
+.waste-name { display: block; font-size: 14px; font-weight: 600; }
+.waste-meta { display: block; font-size: 12.5px; color: var(--muted); margin-top: 3px; }
+.waste-action {
+  display: block;
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--text);
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  border-left: 2px solid var(--blue);
+  border-radius: 4px;
+  padding: 9px 11px;
+  max-width: 68ch;
+}
+.waste-action b { color: var(--navy); margin-right: 6px; }
+.waste-saving { display: block; margin-top: 6px; font-size: 12px; color: var(--muted); }
+.waste-days { font-size: 17px; font-weight: 620; color: var(--navy); white-space: nowrap; font-variant-numeric: tabular-nums; padding-top: 1px; }
 
 /* ---------- Readiness ---------- */
 .questions { display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 16px; }
@@ -393,12 +408,117 @@ section { scroll-margin-top: 20px; }
   .masthead-inner { padding: 26px 16px 22px; }
 }
 
+@media (max-width: 560px) {
+  /* Dagtallet flytter op som overskrift, saa modtraekket faar hele bredden. */
+  .waste-list li { grid-template-columns: 22px minmax(0, 1fr); row-gap: 3px; }
+  .waste-rank { grid-column: 1; grid-row: 1; }
+  .waste-days { grid-column: 2; grid-row: 1; font-size: 15px; }
+  .waste-body { grid-column: 2; grid-row: 2; }
+  .adoption-input { display: block; }
+  .adoption-input .field { margin-top: 10px; }
+}
+
 @media (max-width: 520px) {
   .kpi-grid { grid-template-columns: 1fr; }
   .step { grid-template-columns: 20px minmax(0, 1fr) auto; }
 }
 
 @media print {
-  .toolbar, .step-actions { display: none; }
+  .toolbar,
+  .step-actions,
+  .card-head .btn,
+  .hint { display: none; }
   .results-col { position: static; }
+  body { background: #fff; }
+  .card { box-shadow: none; break-inside: avoid; }
+  .columns { grid-template-columns: 1fr; }
+  .section, .card { page-break-inside: avoid; }
+  a[href^="http"]::after { content: ""; }
+}
+
+
+/* ---------- Version 2: aarsager, modtraek, adoption ---------- */
+.sub-heading {
+  font-size: 13.5px;
+  font-weight: 650;
+  margin: 0 0 4px;
+  color: var(--text);
+}
+.note-line { margin: 0 0 6px; font-size: 12.5px; color: var(--muted); }
+
+.cause-select {
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 5px 6px;
+  background: var(--surface);
+  font-size: 12.5px;
+  color: var(--text);
+}
+.cause-select:hover { border-color: var(--blue); }
+
+/* Femte noegletal: egen raekke, saa det ikke drukner i gitteret. */
+.kpi-span {
+  grid-column: 1 / -1;
+  background: var(--surface-alt);
+  border-top: 2px solid var(--navy);
+}
+.kpi-span .kpi-note { border-top-color: #C9CFDB; }
+
+/* Teksten i lyse baandsegmenter skal kunne laeses. */
+.stack-seg.on-light { color: var(--muted); }
+
+.potential {
+  margin-top: 18px;
+  border: 1px solid var(--border);
+  border-left: 2px solid var(--navy);
+  border-radius: 4px;
+  background: var(--surface-alt);
+  padding: 14px 16px;
+}
+.potential h4 { margin: 0 0 6px; font-size: 13.5px; color: var(--navy); font-weight: 650; }
+.potential p { margin: 0; font-size: 14px; max-width: 68ch; }
+.potential .disclaimer { border-left-color: var(--border); }
+
+.action-list { list-style: none; margin: 0; padding: 0; }
+.action-list li { padding: 11px 0; border-top: 1px solid var(--border); }
+.action-head { font-size: 13px; font-weight: 600; }
+.action-answer {
+  font-weight: 400;
+  color: var(--muted);
+  font-size: 12.5px;
+}
+.action-answer::before { content: "4 a0"; }
+.action-text { font-size: 13.5px; color: var(--text); margin-top: 3px; max-width: 70ch; }
+
+.adoption-input {
+  margin: 18px 0;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--surface-alt);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 20px;
+  align-items: center;
+  justify-content: space-between;
+}
+.adoption-input label { font-size: 14px; max-width: 62ch; }
+.adoption-input input {
+  width: 84px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 7px 8px;
+  background: var(--surface);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-size: 16px;
+}
+
+.closing-note {
+  margin: 22px 0 0;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  font-size: 14px;
+  color: var(--text);
+  max-width: 74ch;
 }
