@@ -1,5 +1,5 @@
 import { OWNER_LABEL, WAIT_CAUSES, causeOf } from '../model.js'
-import { fmt, fmtPct, fmtEstimateRange, dayWord } from '../format.js'
+import { fmt, fmtPct, fmtEstimate, fmtEstimateRange, dayWord } from '../format.js'
 
 const OWNER_COLOR = {
   os: '#1F3864',
@@ -28,7 +28,7 @@ function StackedBar({ segments, total, ariaLabel }) {
   )
 }
 
-export default function WaitDistribution({ metrics, improvement }) {
+export default function WaitDistribution({ metrics, improvement, startHere }) {
   const { waitByOwner, waitByCause, totalWaitDays, totalLeadTimeDays, topWaits, humanWaitShare } = metrics
   const owners = ['os', 'kunde', 'tredjepart']
   const hasWait = totalWaitDays > 0
@@ -163,6 +163,19 @@ export default function WaitDistribution({ metrics, improvement }) {
                   Skønnet bygger på tommelfingerregler for hver årsagstype, ikke på jeres data.
                   Betragt det som en retning, ikke et løfte.
                 </p>
+
+                {startHere ? (
+                  <p className="start-here">
+                    <b>Start med {startHere.cause.label.toLowerCase()}ventetiden.</b> Den fylder{' '}
+                    {fmt(startHere.days, startHere.days % 1 === 0 ? 0 : 1)}{' '}
+                    {dayWord(startHere.days)} i forløbet
+                    {startHere.clearlyLargest && startHere.causeCount > 1
+                      ? ', mere end nogen anden årsag'
+                      : ''}
+                    , og {startHere.cause.effortNote}. Det er de{' '}
+                    {fmtEstimate(startHere.expectedSaving)} dage, der er lettest at hente først.
+                  </p>
+                ) : null}
               </div>
             ) : null}
           </div>

@@ -125,7 +125,10 @@ export default function Readiness({ readiness, onChange, result, metrics, open, 
                 {actions.map((a) => (
                   <li key={a.key}>
                     <div className="action-head">
-                      {a.label} <span className="action-answer">{a.answer.toLowerCase()}</span>
+                      {a.label}{' '}
+                      <span className="action-answer">
+                        {'— ' + a.answer.toLowerCase()}
+                      </span>
                     </div>
                     <div className="action-text">{a.text}</div>
                   </li>

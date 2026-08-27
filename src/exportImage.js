@@ -18,13 +18,13 @@ function triggerDownload(blob, filename) {
   setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
 
-export function downloadSvg(svg, filename = 'onboardingforloeb.svg') {
+export function downloadSvg(svg, filename = 'onboarding-tidslinje.svg') {
   if (!svg) return false
   triggerDownload(new Blob([serialize(svg)], { type: 'image/svg+xml;charset=utf-8' }), filename)
   return true
 }
 
-export function downloadPng(svg, filename = 'onboardingforloeb.png', scale = 2) {
+export function downloadPng(svg, filename = 'onboarding-tidslinje.png', scale = 2) {
   if (!svg) return Promise.resolve(false)
   const source = serialize(svg)
   const width = Number(svg.getAttribute('width')) || svg.clientWidth

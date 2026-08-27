@@ -1,4 +1,4 @@
-import { fmt, dayWord } from '../format.js'
+import { fmt, fmtEstimate, dayWord } from '../format.js'
 
 export default function AdoptionGap({ metrics, adoption, adoptionDays, onChange }) {
   const hasTtv = metrics.ttvDays !== null
@@ -57,8 +57,15 @@ export default function AdoptionGap({ metrics, adoption, adoptionDays, onChange 
               </div>
               <div className="compare-cell highlight">
                 <div className="compare-value">
-                  {adoption.realTimeToValue !== null ? fmt(adoption.realTimeToValue, 1) : '—'}
-                  <span className="suffix">dage</span>
+                  {adoption.realTimeToValue !== null ? (
+                    <>
+                      <span className="prefix">cirka</span>
+                      {fmtEstimate(adoption.realTimeToValue)}
+                      <span className="suffix">dage</span>
+                    </>
+                  ) : (
+                    '—'
+                  )}
                 </div>
                 <div className="compare-label">Reel time-to-value</div>
               </div>
@@ -72,6 +79,12 @@ export default function AdoptionGap({ metrics, adoption, adoptionDays, onChange 
               </b>
               , hvor kunden betaler uden at få noget ud af det — og hvor beslutningen om at
               fortsætte reelt træffes.
+            </p>
+
+            <p className="disclaimer">
+              Time-to-value er regnet af det, du har tastet ind, og vises med decimal.
+              Adoptionsgabet er et gæt, og summen arver gættets usikkerhed — derfor står den
+              reelle time-to-value som et rundt tal.
             </p>
 
             {!hasTtv ? (

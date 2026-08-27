@@ -26,6 +26,8 @@ export const WAIT_CAUSES = [
     countermeasure:
       'Book alle møder i forløbet ved kickoff, ikke undervejs. Kalenderventetid opstår, fordi tiden findes for sent, ikke fordi folk er optaget.',
     saving: [40, 60],
+    effortNote:
+      'den kræver ingen nye systemer, kun at møderne bookes ved kickoff i stedet for undervejs',
     color: '#1F3864',
   },
   {
@@ -36,6 +38,7 @@ export const WAIT_CAUSES = [
     countermeasure:
       'Afklar hvem der har mandatet, før forløbet starter, og få vedkommende med i lokalet. Alternativt: aftal på forhånd, hvad der kan besluttes uden dem.',
     saving: [40, 60],
+    effortNote: 'den kræver én samtale om mandat, før forløbet går i gang',
     color: '#3C5488',
   },
   {
@@ -46,6 +49,7 @@ export const WAIT_CAUSES = [
     countermeasure:
       'Bed ikke om materialet. Sæt en fælles arbejdssession, hvor I laver det sammen. Send skabelon og eksempel på forhånd.',
     saving: [50, 70],
+    effortNote: 'den koster én fælles arbejdssession i stedet for en række rykkere',
     color: '#6E85B5',
   },
   {
@@ -56,6 +60,8 @@ export const WAIT_CAUSES = [
     countermeasure:
       'Skab et synligt resultat tidligt, og find en person hos kunden, der har noget på spil i, at det lykkes. Lav prioritering er sjældent modvilje, det er fravær af konsekvens.',
     saving: [30, 50],
+    effortNote:
+      'den kræver, at nogen hos kunden har noget på spil — ikke at I arbejder hurtigere',
     color: '#A9B6D1',
   },
   {
@@ -66,6 +72,7 @@ export const WAIT_CAUSES = [
     countermeasure:
       'Undersøg om trinnet kan køre parallelt med andet arbejde frem for at blokere. Ellers er det her, automatisering faktisk giver mening.',
     saving: [20, 50],
+    effortNote: 'den er den eneste af de fem, hvor automatisering faktisk er svaret',
     color: '#C9CFDB',
   },
 ]
@@ -292,6 +299,28 @@ export function computeImprovement(metrics) {
   const flowHigh = leadLow > 0 ? (metrics.totalProcessDays / leadLow) * 100 : null
 
   return { minSaved, maxSaved, leadLow, leadHigh, flowLow, flowHigh, causes: top.map((w) => w.cause) }
+}
+
+// Hvad goer man foerst? Den aarsag, der realistisk frigiver flest dage.
+// Rangeringen gaar paa hele forloebet, ikke kun de tre stoerste poster, fordi
+// et modtraek mod en aarsag rammer alle de steder, aarsagen optraeder.
+export function computeStartHere(metrics) {
+  const ranked = Object.entries(metrics.waitByCause)
+    .map(([key, days]) => {
+      const cause = causeOf(key)
+      const midpoint = (cause.saving[0] + cause.saving[1]) / 2 / 100
+      return { cause, days, expectedSaving: days * midpoint }
+    })
+    .sort((a, b) => b.expectedSaving - a.expectedSaving || b.days - a.days)
+
+  if (!ranked.length) return null
+  const [first, second] = ranked
+  return {
+    ...first,
+    // Uden en toer at maale mod giver "mere end nogen anden" ingen mening.
+    clearlyLargest: !second || first.expectedSaving > second.expectedSaving + 1e-9,
+    causeCount: ranked.length,
+  }
 }
 
 export function computeAdoption(metrics, adoptionDays) {

@@ -257,8 +257,8 @@ section { scroll-margin-top: 20px; }
   list-style: none;
 }
 .derivation summary::-webkit-details-marker { display: none; }
-.derivation summary::before { content: "\25B8\00a0"; }
-.derivation[open] summary::before { content: "\25BE\00a0"; }
+.derivation summary::before { content: "▸"; margin-right: 6px; }
+.derivation[open] summary::before { content: "▾"; margin-right: 6px; }
 .derivation summary:hover { color: var(--navy); }
 .derivation-body { margin-top: 10px; font-size: 12.5px; color: var(--muted); }
 .derivation-body table { width: 100%; border-collapse: collapse; }
@@ -355,6 +355,7 @@ section { scroll-margin-top: 20px; }
 .compare-cell.highlight { background: var(--surface-alt); }
 .compare-value { font-size: 30px; font-weight: 620; color: var(--navy); letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
 .compare-value .suffix { font-size: 14px; font-weight: 500; color: var(--muted); margin-left: 4px; letter-spacing: 0; }
+.compare-value .prefix { font-size: 14px; font-weight: 500; color: var(--muted); margin-right: 5px; letter-spacing: 0; }
 .compare-value.delta { color: var(--yellow); }
 .compare-value.delta.negative { color: var(--green); }
 .compare-label { font-size: 12.5px; color: var(--muted); margin-top: 4px; }
@@ -487,7 +488,6 @@ section { scroll-margin-top: 20px; }
   color: var(--muted);
   font-size: 12.5px;
 }
-.action-answer::before { content: "4 a0"; }
 .action-text { font-size: 13.5px; color: var(--text); margin-top: 3px; max-width: 70ch; }
 
 .adoption-input {
@@ -522,3 +522,13 @@ section { scroll-margin-top: 20px; }
   color: var(--text);
   max-width: 74ch;
 }
+
+.start-here {
+  margin: 14px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  font-size: 14px;
+  color: var(--text);
+  max-width: 70ch;
+}
+.start-here b { color: var(--navy); }

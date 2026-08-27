@@ -6,6 +6,7 @@ import {
   computeMetrics,
   computeReadiness,
   computeImprovement,
+  computeStartHere,
   computeAdoption,
   newId,
 } from './model.js'
@@ -106,6 +107,7 @@ export default function App() {
   const metrics = useMemo(() => computeMetrics(steps), [steps])
   const readinessResult = useMemo(() => computeReadiness(metrics, readiness), [metrics, readiness])
   const improvement = useMemo(() => computeImprovement(metrics), [metrics])
+  const startHere = useMemo(() => computeStartHere(metrics), [metrics])
   const adoption = useMemo(() => computeAdoption(metrics, adoptionDays), [metrics, adoptionDays])
 
   const changeStep = useCallback(
@@ -227,7 +229,7 @@ export default function App() {
         </div>
 
         <div className="section">
-          <WaitDistribution metrics={metrics} improvement={improvement} />
+          <WaitDistribution metrics={metrics} improvement={improvement} startHere={startHere} />
         </div>
 
         <div className="section">
