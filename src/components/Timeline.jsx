@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { OWNER_LABEL, buildBlocks, causeOf } from '../model.js'
+import { OWNER_LABEL, buildBlocks, causeOrUnspecified } from '../model.js'
 import { fmt, dayWord } from '../format.js'
 
 const PAD_LEFT_LANES = 92
@@ -243,7 +243,7 @@ export default function Timeline({ steps, metrics, svgRef, adoptionDays = null }
                   ' · ' +
                   OWNER_LABEL[b.owner] +
                   ' · årsag: ' +
-                  causeOf(b.cause).label.toLowerCase()
+                  causeOrUnspecified(b.cause).label.toLowerCase()
               return (
                 <g key={i}>
                   <title>{tip}</title>

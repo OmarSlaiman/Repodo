@@ -1,4 +1,4 @@
-import { OWNERS, WAIT_CAUSES, DEFAULT_CAUSE, num } from '../model.js'
+import { OWNERS, WAIT_CAUSES, num } from '../model.js'
 
 function NumberField({ id, label, unit, value, onChange, step, title }) {
   return (
@@ -22,7 +22,7 @@ function NumberField({ id, label, unit, value, onChange, step, title }) {
 
 function Step({ step, index, total, onChange, onMove, onRemove, onSetValueMoment }) {
   const hasWait = num(step.waitDaysBefore) > 0
-  const cause = step.waitCause || DEFAULT_CAUSE
+  const cause = step.waitCause || ''
 
   return (
     <li className={'step' + (step.isValueMoment ? ' is-value' : '')}>
@@ -80,10 +80,12 @@ function Step({ step, index, total, onChange, onMove, onRemove, onSetValueMoment
               <label htmlFor={'wc-' + step.id}>Fordi</label>
               <select
                 id={'wc-' + step.id}
-                className="cause-select"
+                className={'cause-select' + (cause ? '' : ' needs-answer')}
                 value={cause}
-                onChange={(e) => onChange({ waitCause: e.target.value })}
+                title="Hvorfor lå opgaven stille? Årsagen afgør modtrækket."
+                onChange={(e) => onChange({ waitCause: e.target.value || null })}
               >
+                <option value="">Vælg årsag …</option>
                 {WAIT_CAUSES.map((c) => (
                   <option key={c.key} value={c.key} title={c.meaning}>
                     {c.label}
@@ -148,8 +150,9 @@ export default function StepList({ steps, onChangeStep, onMoveStep, onRemoveStep
       <div className="card-body">
         <p className="hint">
           Ved du det ikke præcist, så gæt. Et kvalificeret gæt er bedre end ingen kortlægning, og
-          du kan rette det senere. Feltet <b>fordi</b> beskriver, hvorfor opgaven lå stille — det
-          er årsagen, ikke ejeren, der afgør, hvad man kan gøre ved ventetiden.
+          du kan rette det senere. Feltet <b>fordi</b> er dit svar på, hvorfor opgaven lå stille;
+          værktøjet gætter det ikke selv. Det er årsagen, ikke ejeren, der afgør, hvad man kan
+          gøre ved ventetiden — og om ventetiden overhovedet er teknisk.
         </p>
 
         {steps.length === 0 ? (

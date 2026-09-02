@@ -55,8 +55,9 @@ flowEfficiency    = totalProcessDays / totalLeadTimeDays * 100
 ttvDays           = sum(waitDaysBefore + processHours/7.4) til og med trinnet med isValueMoment
 handoffs          = antal gange owner skifter mellem to trin i træk
 waitByOwner       = ventetid før et trin tilskrives den, der skal udføre trinnet
-humanWaitDays     = sum(waitDaysBefore hvor waitCause != "teknisk")
-humanWaitShare    = humanWaitDays / totalWaitDays * 100
+classifiedWaitDays = ventetid hvor waitCause er sat
+humanWaitDays      = sum(waitDaysBefore hvor waitCause er sat og ikke er "teknisk")
+humanWaitShare     = humanWaitDays / classifiedWaitDays * 100
 ```
 
 ### Årsag frem for ejer
@@ -69,6 +70,14 @@ hver et modtræk og et besparelsesinterval i `WAIT_CAUSES`.
 Fire af de fem er menneskelige. Det giver nøgletallet **menneskelig ventetid**, som er værktøjets
 skarpeste pointe: man kan ikke automatisere sig ud af et forløb, hvor næsten al ventetid skyldes
 kalendere, beslutninger og prioriteringer.
+
+**Uoplyst er en egen tilstand.** `waitCause: null` betyder, at brugeren ikke har svaret, og det
+falder aldrig tilbage på en standardværdi. Det er afgørende for troværdigheden: gjorde det det,
+ville hvert eneste trin tælle som den valgte standard, den menneskelige andel ville altid vise
+100 %, og alle modtræk ville være det samme. Uoplyst ventetid tælles derfor hverken som
+menneskelig eller teknisk, den vises som et stribet felt i bjælken, den holdes uden for
+potentialeberegningen, og en post uden årsag får en opfordring i stedet for et lånt modtræk.
+Værktøjet gætter ikke på brugerens vegne.
 
 ### Rundingsreglen
 
@@ -87,8 +96,9 @@ ser præcist ud, lover mere end det kan holde.
   bruges i det daglige. Det lægges til time-to-value og tegnes som en stiplet zone på tidslinjen.
 
 Det forudindlæste eksempel giver 22,5 dages gennemløbstid, 26 timers arbejde, 15,6 %
-flow-effektivitet, fire overleveringer, 13,7 dages time-to-value og 94,7 % menneskelig ventetid.
-Håndteres de tre største spildposter, lander forløbet på cirka 13-16 dage.
+flow-effektivitet, fire overleveringer, 13,7 dages time-to-value og 89,5 % menneskelig ventetid
+(2 af 19 ventedage er teknisk). Håndteres de tre største spildposter, lander forløbet på cirka
+13-16 dage, og modtrækket peger på kalenderventetiden først.
 
 ## Deling og persistens
 
@@ -97,8 +107,9 @@ Håndteres de tre største spildposter, lander forløbet på cirka 13-16 dage.
 - **Deling** koder hele forløbet ind i URL'ens hash som base64. Intet forlader browseren.
   Så snart brugeren retter noget efter at have delt, fjernes hashen igen — adressen må ikke
   beskrive en tilstand, der ikke længere gælder.
-- **Ældre links** fra version 1 har ingen ventetidsårsager og intet adoptionstal. De indlæses
-  stadig; årsagen falder tilbage på `leverance`, og adoptionsfeltet står tomt.
+- **Ældre links og gemt arbejde** fra version 1 har ingen ventetidsårsager og intet adoptionstal.
+  De indlæses stadig, men årsagen forbliver **uoplyst** frem for at blive gættet, og
+  adoptionsfeltet står tomt. Værktøjet beder om de manglende svar i stedet for at opfinde dem.
 
 ## Deploy
 

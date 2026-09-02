@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   EXAMPLE_STEPS,
   DEFAULT_READINESS,
-  DEFAULT_CAUSE,
   computeMetrics,
   computeReadiness,
   computeImprovement,
@@ -146,7 +145,7 @@ export default function App() {
           owner: 'os',
           processHours: 1,
           waitDaysBefore: 0,
-          waitCause: DEFAULT_CAUSE,
+          waitCause: null,
           isValueMoment: false,
         },
       ]),

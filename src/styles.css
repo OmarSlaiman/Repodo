@@ -456,6 +456,12 @@ section { scroll-margin-top: 20px; }
   color: var(--text);
 }
 .cause-select:hover { border-color: var(--blue); }
+/* Ventetid uden aarsag er et ubesvaret spoergsmaal, ikke en standardvaerdi. */
+.cause-select.needs-answer {
+  border-color: var(--yellow);
+  color: var(--yellow);
+  background: #FDFAF3;
+}
 
 /* Femte noegletal: egen raekke, saa det ikke drukner i gitteret. */
 .kpi-span {
@@ -467,6 +473,29 @@ section { scroll-margin-top: 20px; }
 
 /* Teksten i lyse baandsegmenter skal kunne laeses. */
 .stack-seg.on-light { color: var(--muted); }
+/* Uoplyst ventetid skal ikke kunne forveksles med en maalt kategori. */
+.stack-seg.hatched {
+  background-image: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 4px,
+    rgba(107, 114, 128, 0.28) 4px,
+    rgba(107, 114, 128, 0.28) 8px
+  );
+}
+.swatch.hatched {
+  background-image: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 2px,
+    rgba(107, 114, 128, 0.35) 2px,
+    rgba(107, 114, 128, 0.35) 4px
+  );
+}
+.waste-action.needs-answer {
+  border-left-color: var(--yellow);
+  background: #FDFAF3;
+}
 
 .potential {
   margin-top: 18px;

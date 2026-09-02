@@ -78,8 +78,20 @@ export const WAIT_CAUSES = [
 ]
 
 export const CAUSE_BY_KEY = Object.fromEntries(WAIT_CAUSES.map((c) => [c.key, c]))
-export const DEFAULT_CAUSE = 'leverance'
-export const causeOf = (key) => CAUSE_BY_KEY[key] ?? CAUSE_BY_KEY[DEFAULT_CAUSE]
+
+// Et trin uden aarsag er uoplyst - ikke "leverance". Faldt vi tilbage paa en
+// standardvaerdi, ville vaerktoejet praesentere et gaet som en oplysning, og
+// den menneskelige andel ville altid vise 100 %.
+export const UNSPECIFIED = {
+  key: null,
+  label: 'Uoplyst',
+  human: null,
+  meaning: 'Ventetiden er registreret, men årsagen er ikke sat',
+  color: '#EDEFF4',
+}
+
+export const causeOf = (key) => CAUSE_BY_KEY[key] ?? null
+export const causeOrUnspecified = (key) => CAUSE_BY_KEY[key] ?? UNSPECIFIED
 
 let idCounter = 0
 export const newId = () => `s${Date.now().toString(36)}${(idCounter++).toString(36)}`
@@ -88,7 +100,7 @@ export const newId = () => `s${Date.now().toString(36)}${(idCounter++).toString(
 export const EXAMPLE_STEPS = [
   { id: 'ex1', name: 'Kickoff-møde og forventningsafstemning', owner: 'os', processHours: 2, waitDaysBefore: 0, waitCause: 'kalender', isValueMoment: false },
   { id: 'ex2', name: 'Kunden leverer kontoplan og systemadgange', owner: 'kunde', processHours: 3, waitDaysBefore: 5, waitCause: 'leverance', isValueMoment: false },
-  { id: 'ex3', name: 'Opsætning af integration', owner: 'os', processHours: 6, waitDaysBefore: 1, waitCause: 'prioritering', isValueMoment: false },
+  { id: 'ex3', name: 'Opsætning af integration', owner: 'os', processHours: 6, waitDaysBefore: 1, waitCause: 'teknisk', isValueMoment: false },
   { id: 'ex4', name: 'Datavalidering og fejlsøgning', owner: 'os', processHours: 4, waitDaysBefore: 0, waitCause: 'leverance', isValueMoment: false },
   { id: 'ex5', name: 'Kunden godkender kontoplansmapping', owner: 'kunde', processHours: 2, waitDaysBefore: 4, waitCause: 'beslutning', isValueMoment: false },
   { id: 'ex6', name: 'Første automatiske afstemning kører', owner: 'os', processHours: 3, waitDaysBefore: 1, waitCause: 'teknisk', isValueMoment: true },
@@ -210,22 +222,30 @@ export function computeMetrics(steps) {
   const waitByOwner = { os: 0, kunde: 0, tredjepart: 0 }
   const waitByCause = {}
   let humanWaitDays = 0
+  let unspecifiedWaitDays = 0
   for (const s of steps) {
     const days = num(s.waitDaysBefore)
     if (waitByOwner[s.owner] !== undefined) waitByOwner[s.owner] += days
     if (days <= 0) continue
     const cause = causeOf(s.waitCause)
+    if (!cause) {
+      unspecifiedWaitDays += days
+      continue
+    }
     waitByCause[cause.key] = (waitByCause[cause.key] || 0) + days
     if (cause.human) humanWaitDays += days
   }
-  const humanWaitShare = totalWaitDays > 0 ? (humanWaitDays / totalWaitDays) * 100 : null
+  // Andelen maales af den ventetid, brugeren faktisk har klassificeret.
+  const classifiedWaitDays = totalWaitDays - unspecifiedWaitDays
+  const humanWaitShare =
+    classifiedWaitDays > 0 ? (humanWaitDays / classifiedWaitDays) * 100 : null
 
   const topWaits = steps
     .map((s, index) => ({
       index,
       name: s.name,
       owner: s.owner,
-      cause: causeOf(s.waitCause).key,
+      cause: s.waitCause && CAUSE_BY_KEY[s.waitCause] ? s.waitCause : null,
       days: num(s.waitDaysBefore),
     }))
     .filter((s) => s.days > 0)
@@ -249,6 +269,8 @@ export function computeMetrics(steps) {
     waitByCause,
     humanWaitDays,
     humanWaitShare,
+    unspecifiedWaitDays,
+    classifiedWaitDays,
     topWaits,
   }
 }
@@ -285,20 +307,30 @@ export function computeImprovement(metrics) {
   const top = metrics.topWaits
   if (!top.length || metrics.totalLeadTimeDays <= 0) return null
 
+  // En post uden aarsag har intet besparelsesinterval. Den springes over,
+  // frem for at blive gaettet ind i et tal, brugeren ikke har grundlag for.
   let minSaved = 0
   let maxSaved = 0
+  let usedPosts = 0
+  let skippedDays = 0
   for (const w of top) {
     const cause = causeOf(w.cause)
+    if (!cause) {
+      skippedDays += w.days
+      continue
+    }
+    usedPosts++
     minSaved += (w.days * cause.saving[0]) / 100
     maxSaved += (w.days * cause.saving[1]) / 100
   }
+  if (!usedPosts) return null
 
   const leadHigh = metrics.totalLeadTimeDays - minSaved
   const leadLow = Math.max(metrics.totalProcessDays, metrics.totalLeadTimeDays - maxSaved)
   const flowLow = leadHigh > 0 ? (metrics.totalProcessDays / leadHigh) * 100 : null
   const flowHigh = leadLow > 0 ? (metrics.totalProcessDays / leadLow) * 100 : null
 
-  return { minSaved, maxSaved, leadLow, leadHigh, flowLow, flowHigh, causes: top.map((w) => w.cause) }
+  return { minSaved, maxSaved, leadLow, leadHigh, flowLow, flowHigh, usedPosts, skippedDays }
 }
 
 // Hvad goer man foerst? Den aarsag, der realistisk frigiver flest dage.
@@ -308,9 +340,11 @@ export function computeStartHere(metrics) {
   const ranked = Object.entries(metrics.waitByCause)
     .map(([key, days]) => {
       const cause = causeOf(key)
+      if (!cause) return null
       const midpoint = (cause.saving[0] + cause.saving[1]) / 2 / 100
       return { cause, days, expectedSaving: days * midpoint }
     })
+    .filter(Boolean)
     .sort((a, b) => b.expectedSaving - a.expectedSaving || b.days - a.days)
 
   if (!ranked.length) return null
@@ -343,7 +377,7 @@ export function buildBlocks(steps) {
         kind: 'wait',
         stepIndex: index,
         owner: step.owner,
-        cause: causeOf(step.waitCause).key,
+        cause: step.waitCause && CAUSE_BY_KEY[step.waitCause] ? step.waitCause : null,
         name: step.name,
         start: cursor,
         days: wait,

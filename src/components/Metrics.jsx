@@ -37,6 +37,8 @@ export default function Metrics({ metrics, stepCount }) {
     handoffs,
     humanWaitDays,
     humanWaitShare,
+    unspecifiedWaitDays,
+    classifiedWaitDays,
   } = metrics
 
   const hasData = stepCount > 0 && totalLeadTimeDays > 0
@@ -98,21 +100,39 @@ export default function Metrics({ metrics, stepCount }) {
             note="Hvert skift er et sted, hvor opgaven kan lægge sig til at vente eller blive misforstået."
           />
 
-          {/* Det skarpeste tal i vaerktoejet faar sin egen raekke. */}
+          {/* Det skarpeste tal i vaerktoejet faar sin egen raekke. Det bygger paa
+              brugerens egne svar, saa uoplyst ventetid maa ikke taelle med som
+              menneskelig - saa ville tallet altid vise 100 %. */}
           <Kpi
             className="kpi-span"
-            value={humanWaitShare !== null ? fmt(humanWaitShare, 1) : '—'}
+            value={humanWaitShare !== null ? fmt(humanWaitShare, 1) : null}
             suffix={humanWaitShare !== null ? '%' : ''}
+            undefinedText={
+              humanWaitShare === null
+                ? totalWaitDays > 0
+                  ? 'ingen årsager sat endnu'
+                  : 'ingen ventetid registreret'
+                : null
+            }
             label="Menneskelig ventetid"
             sub={
               humanWaitShare !== null
                 ? fmt(humanWaitDays, 1) +
                   ' af ' +
-                  fmt(totalWaitDays, 1) +
-                  ' ventedage skyldes kalendere, beslutninger, leverancer eller prioritering'
-                : 'registrér ventetid for at få et tal'
+                  fmt(classifiedWaitDays, 1) +
+                  ' klassificerede ventedage skyldes kalendere, beslutninger, leverancer eller prioritering' +
+                  (unspecifiedWaitDays > 0
+                    ? '. ' + fmt(unspecifiedWaitDays, 1) + ' dage mangler stadig en årsag'
+                    : '')
+                : totalWaitDays > 0
+                  ? 'sæt feltet "fordi" på trinnene med ventetid'
+                  : 'registrér ventetid for at få et tal'
             }
-            note="Så stor en del af ventetiden skyldes mennesker, kalendere og beslutninger — ikke teknik. Det er også dér, forkortelsen er lettest at hente. Man kan ikke automatisere sig ud af et forløb, hvor næsten al ventetid er menneskelig."
+            note={
+              humanWaitShare === null && totalWaitDays > 0
+                ? 'Værktøjet gætter ikke, om ventetid er menneskelig eller teknisk — det er dit svar i feltet "fordi" på hvert trin. Fire af de fem årsager er menneskelige; kun "teknisk" er maskintid.'
+                : 'Opdelingen kommer fra feltet "fordi" på hvert trin, ikke fra en antagelse. Fire af de fem årsager er menneskelige; kun "teknisk" er maskintid. Det er dér, forkortelsen er lettest at hente — man kan ikke automatisere sig ud af et forløb, hvor næsten al ventetid er menneskelig.'
+            }
           />
         </div>
 
@@ -150,7 +170,15 @@ export default function Metrics({ metrics, stepCount }) {
                   <td>{fmtInt(handoffs)}</td>
                 </tr>
                 <tr>
-                  <td>Menneskelig ventetid = al ventetid med anden årsag end teknisk</td>
+                  <td>Ventetid med en årsag sat</td>
+                  <td>{fmt(classifiedWaitDays, 1)} dage</td>
+                </tr>
+                <tr>
+                  <td>Ventetid uden årsag, tælles ikke med nogen af stederne</td>
+                  <td>{fmt(unspecifiedWaitDays, 1)} dage</td>
+                </tr>
+                <tr>
+                  <td>Menneskelig ventetid = klassificeret ventetid med anden årsag end teknisk</td>
                   <td>{humanWaitShare !== null ? fmt(humanWaitDays, 1) + ' dage' : '—'}</td>
                 </tr>
               </tbody>

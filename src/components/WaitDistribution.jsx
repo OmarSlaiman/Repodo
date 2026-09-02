@@ -1,4 +1,4 @@
-import { OWNER_LABEL, WAIT_CAUSES, causeOf } from '../model.js'
+import { OWNER_LABEL, WAIT_CAUSES, UNSPECIFIED, causeOf } from '../model.js'
 import { fmt, fmtPct, fmtEstimate, fmtEstimateRange, dayWord } from '../format.js'
 
 const OWNER_COLOR = {
@@ -16,7 +16,9 @@ function StackedBar({ segments, total, ariaLabel }) {
         return (
           <div
             key={seg.key}
-            className={'stack-seg' + (seg.light ? ' on-light' : '')}
+            className={
+              'stack-seg' + (seg.light ? ' on-light' : '') + (seg.hatched ? ' hatched' : '')
+            }
             style={{ width: share + '%', background: seg.color }}
             title={seg.label + ': ' + fmt(seg.days, 1) + ' ' + dayWord(seg.days)}
           >
@@ -29,7 +31,15 @@ function StackedBar({ segments, total, ariaLabel }) {
 }
 
 export default function WaitDistribution({ metrics, improvement, startHere }) {
-  const { waitByOwner, waitByCause, totalWaitDays, totalLeadTimeDays, topWaits, humanWaitShare } = metrics
+  const {
+    waitByOwner,
+    waitByCause,
+    totalWaitDays,
+    totalLeadTimeDays,
+    topWaits,
+    humanWaitShare,
+    unspecifiedWaitDays,
+  } = metrics
   const owners = ['os', 'kunde', 'tredjepart']
   const hasWait = totalWaitDays > 0
 
@@ -40,13 +50,23 @@ export default function WaitDistribution({ metrics, improvement, startHere }) {
     label: OWNER_LABEL[o],
   }))
 
-  const causeSegments = WAIT_CAUSES.map((c) => ({
-    key: c.key,
-    days: waitByCause[c.key] || 0,
-    color: c.color,
-    label: c.label,
-    light: !c.human,
-  }))
+  const causeSegments = [
+    ...WAIT_CAUSES.map((c) => ({
+      key: c.key,
+      days: waitByCause[c.key] || 0,
+      color: c.color,
+      label: c.label,
+      light: !c.human,
+    })),
+    {
+      key: 'uoplyst',
+      days: unspecifiedWaitDays,
+      color: UNSPECIFIED.color,
+      label: UNSPECIFIED.label,
+      light: true,
+      hatched: true,
+    },
+  ]
 
   return (
     <section className="card" aria-labelledby="wait-heading">
@@ -98,20 +118,37 @@ export default function WaitDistribution({ metrics, improvement, startHere }) {
               }
             />
             <div className="stack-legend">
-              {causeSegments.map((s) => (
-                <span key={s.key} title={causeOf(s.key).meaning}>
-                  <i className="swatch" style={{ background: s.color }} />
-                  {s.label}: <b>{fmt(s.days, 1)} {dayWord(s.days)}</b>
-                </span>
-              ))}
+              {causeSegments
+                .filter((s) => s.key !== 'uoplyst' || s.days > 0)
+                .map((s) => (
+                  <span key={s.key} title={(causeOf(s.key) ?? UNSPECIFIED).meaning}>
+                    <i
+                      className={'swatch' + (s.hatched ? ' hatched' : '')}
+                      style={{ background: s.color }}
+                    />
+                    {s.label}: <b>{fmt(s.days, 1)} {dayWord(s.days)}</b>
+                  </span>
+                ))}
             </div>
             {humanWaitShare !== null ? (
               <p className="chart-caption">
                 De blå felter er menneskelige årsager, det grå er teknisk.{' '}
-                {fmt(humanWaitShare, 1)} % af ventetiden skyldes mennesker. Det er ikke
-                inkompetence, det er organisering — og det er organisering, man kan lave om på.
+                {fmt(humanWaitShare, 1)} % af den klassificerede ventetid skyldes mennesker. Det er
+                ikke inkompetence, det er organisering — og det er organisering, man kan lave om på.
+                {unspecifiedWaitDays > 0 ? (
+                  <>
+                    {' '}
+                    Det stribede felt er ventetid uden en årsag: {fmt(unspecifiedWaitDays, 1)}{' '}
+                    {dayWord(unspecifiedWaitDays)}, som ikke tælles med nogen af stederne.
+                  </>
+                ) : null}
               </p>
-            ) : null}
+            ) : (
+              <p className="chart-caption">
+                Ingen af trinnene har en årsag sat endnu, så opdelingen kan ikke laves. Sæt feltet{' '}
+                <b>fordi</b> på trinnene med ventetid — værktøjet gætter det ikke for dig.
+              </p>
+            )}
           </>
         )}
 
@@ -133,14 +170,25 @@ export default function WaitDistribution({ metrics, improvement, startHere }) {
                       </div>
                       <div className="waste-meta">
                         {fmtPct(w.shareOfTotal)} % af hele forløbet · ventetid hos{' '}
-                        {OWNER_LABEL[w.owner].toLowerCase()} · årsag: {cause.label.toLowerCase()}
+                        {OWNER_LABEL[w.owner].toLowerCase()} · årsag:{' '}
+                        {cause ? cause.label.toLowerCase() : 'ikke sat'}
                       </div>
-                      <div className="waste-action">
-                        <b>Modtræk</b> {cause.countermeasure}
-                        <span className="waste-saving">
-                          Forkorter typisk {cause.saving[0]}–{cause.saving[1]} %
-                        </span>
-                      </div>
+                      {/* Uden en aarsag findes der intet modtraek. At laane et fra en
+                          anden aarsag ville vaere et gaet forkladt som raad. */}
+                      {cause ? (
+                        <div className="waste-action">
+                          <b>Modtræk</b> {cause.countermeasure}
+                          <span className="waste-saving">
+                            Forkorter typisk {cause.saving[0]}–{cause.saving[1]} %
+                          </span>
+                        </div>
+                      ) : (
+                        <div className="waste-action needs-answer">
+                          <b>Modtræk mangler</b> Sæt feltet <b>fordi</b> på trin {w.index + 1}.
+                          Modtrækket følger af årsagen, så uden den kan værktøjet ikke sige, hvad
+                          man gør — og det gætter ikke.
+                        </div>
+                      )}
                     </div>
                     <span className="waste-days">
                       {fmt(w.days, w.days % 1 === 0 ? 0 : 1)} {dayWord(w.days)}
@@ -162,6 +210,13 @@ export default function WaitDistribution({ metrics, improvement, startHere }) {
                 <p className="disclaimer" style={{ marginTop: 10 }}>
                   Skønnet bygger på tommelfingerregler for hver årsagstype, ikke på jeres data.
                   Betragt det som en retning, ikke et løfte.
+                  {improvement.skippedDays > 0 ? (
+                    <>
+                      {' '}
+                      {fmt(improvement.skippedDays, 1)} {dayWord(improvement.skippedDays)} er holdt
+                      udenfor, fordi de tilhørende trin ikke har en årsag sat.
+                    </>
+                  ) : null}
                 </p>
 
                 {startHere ? (
