@@ -224,7 +224,7 @@ section { scroll-margin-top: 20px; }
 .btn-primary { background: var(--navy); border-color: var(--navy); color: #fff; }
 .btn-primary:hover { background: var(--navy-dark); border-color: var(--navy-dark); color: #fff; }
 
-/* ---------- Noegletal ---------- */
+/* ---------- Key figures ---------- */
 .kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--border); border-radius: var(--radius); overflow: hidden; }
 .kpi { background: var(--surface); padding: 16px 16px 15px; }
 .kpi-value {
@@ -267,7 +267,7 @@ section { scroll-margin-top: 20px; }
 .derivation-body p { margin: 10px 0 0; }
 .derivation-body .rule td { border-top: 1px solid var(--border); padding-top: 6px; }
 
-/* ---------- Tidslinje ---------- */
+/* ---------- Timeline ---------- */
 .chart-scroll { overflow-x: auto; overflow-y: hidden; padding-bottom: 4px; }
 .chart-scroll svg { display: block; }
 
@@ -277,7 +277,7 @@ section { scroll-margin-top: 20px; }
 
 .chart-caption { margin: 12px 0 0; font-size: 13px; color: var(--muted); max-width: 74ch; }
 
-/* ---------- Ventetidsfordeling ---------- */
+/* ---------- Wait distribution ---------- */
 .stack {
   display: flex;
   width: 100%;
@@ -385,7 +385,7 @@ section { scroll-margin-top: 20px; }
   padding: 10px 12px;
 }
 
-/* ---------- Fod ---------- */
+/* ---------- Footer ---------- */
 .footer {
   margin-top: 40px;
   border-top: 1px solid var(--border);
@@ -410,7 +410,7 @@ section { scroll-margin-top: 20px; }
 }
 
 @media (max-width: 560px) {
-  /* Dagtallet flytter op som overskrift, saa modtraekket faar hele bredden. */
+  /* The day count moves up as a heading, so the countermeasure gets the full width. */
   .waste-list li { grid-template-columns: 22px minmax(0, 1fr); row-gap: 3px; }
   .waste-rank { grid-column: 1; grid-row: 1; }
   .waste-days { grid-column: 2; grid-row: 1; font-size: 15px; }
@@ -438,7 +438,7 @@ section { scroll-margin-top: 20px; }
 }
 
 
-/* ---------- Version 2: aarsager, modtraek, adoption ---------- */
+/* ---------- Version 2: causes, countermeasures, adoption ---------- */
 .sub-heading {
   font-size: 13.5px;
   font-weight: 650;
@@ -456,14 +456,14 @@ section { scroll-margin-top: 20px; }
   color: var(--text);
 }
 .cause-select:hover { border-color: var(--blue); }
-/* Ventetid uden aarsag er et ubesvaret spoergsmaal, ikke en standardvaerdi. */
+/* Waiting with no cause is an unanswered question, not a default value. */
 .cause-select.needs-answer {
   border-color: var(--yellow);
   color: var(--yellow);
   background: #FDFAF3;
 }
 
-/* Femte noegletal: egen raekke, saa det ikke drukner i gitteret. */
+/* The fifth key figure gets its own row, so it does not drown in the grid. */
 .kpi-span {
   grid-column: 1 / -1;
   background: var(--surface-alt);
@@ -471,9 +471,9 @@ section { scroll-margin-top: 20px; }
 }
 .kpi-span .kpi-note { border-top-color: #C9CFDB; }
 
-/* Teksten i lyse baandsegmenter skal kunne laeses. */
+/* Text on light bar segments has to stay readable. */
 .stack-seg.on-light { color: var(--muted); }
-/* Uoplyst ventetid skal ikke kunne forveksles med en maalt kategori. */
+/* Unspecified waiting must not be mistaken for a measured category. */
 .stack-seg.hatched {
   background-image: repeating-linear-gradient(
     45deg,

@@ -1,92 +1,94 @@
-// Datamodel, konstanter og beregninger.
-// Alt her er rent og uden UI, saa tallene kan efterproeves et sted.
+// Data model, constants and calculations.
+// Everything here is pure and free of UI, so the numbers can be checked in one place.
 
-export const HOURS_PER_DAY = 7.4 // dansk standard fuldtidsdag
+export const HOURS_PER_DAY = 7.4 // a standard full working day
 
 export const OWNERS = [
-  { key: 'os', label: 'Os', short: 'Os' },
-  { key: 'kunde', label: 'Kunden', short: 'Kunde' },
-  { key: 'tredjepart', label: 'Tredjepart', short: '3. part' },
+  { key: 'us', label: 'Us', short: 'Us' },
+  { key: 'customer', label: 'Customer', short: 'Customer' },
+  { key: 'thirdParty', label: 'Third party', short: '3rd party' },
 ]
 
+export const OWNER_KEYS = OWNERS.map((o) => o.key)
+
 export const OWNER_LABEL = {
-  os: 'Os',
-  kunde: 'Kunden',
-  tredjepart: 'Tredjepart',
+  us: 'Us',
+  customer: 'Customer',
+  thirdParty: 'Third party',
 }
 
-// Ejerskab fortaeller, hvem der holder bolden. Aarsagen fortaeller, hvorfor den ligger
-// stille - og det er aarsagen, der afgoer, hvad man kan goere ved det.
+// Ownership tells you who is holding the ball. The cause tells you why it is
+// sitting still - and it is the cause that decides what can be done about it.
 export const WAIT_CAUSES = [
   {
-    key: 'kalender',
-    label: 'Kalender',
+    key: 'calendar',
+    label: 'Calendar',
     human: true,
-    meaning: 'Venter på at få en tid i kalenderen: møde, workshop, træning',
+    meaning: 'Waiting for a slot in the calendar: a meeting, a workshop, a training session',
     countermeasure:
-      'Book alle møder i forløbet ved kickoff, ikke undervejs. Kalenderventetid opstår, fordi tiden findes for sent, ikke fordi folk er optaget.',
+      'Book every meeting in the flow at kickoff, not as you go. Calendar wait happens because the time is found too late, not because people are busy.',
     saving: [40, 60],
     effortNote:
-      'den kræver ingen nye systemer, kun at møderne bookes ved kickoff i stedet for undervejs',
+      'it needs no new systems, only that the meetings are booked at kickoff instead of along the way',
     color: '#1F3864',
   },
   {
-    key: 'beslutning',
-    label: 'Beslutning',
+    key: 'decision',
+    label: 'Decision',
     human: true,
-    meaning: 'Venter på en godkendelse eller et valg',
+    meaning: 'Waiting for an approval or a choice',
     countermeasure:
-      'Afklar hvem der har mandatet, før forløbet starter, og få vedkommende med i lokalet. Alternativt: aftal på forhånd, hvad der kan besluttes uden dem.',
+      'Establish who holds the mandate before the flow starts, and get that person in the room. Failing that, agree up front what can be decided without them.',
     saving: [40, 60],
-    effortNote: 'den kræver én samtale om mandat, før forløbet går i gang',
+    effortNote: 'it takes one conversation about mandate before the flow begins',
     color: '#3C5488',
   },
   {
-    key: 'leverance',
-    label: 'Leverance',
+    key: 'delivery',
+    label: 'Delivery',
     human: true,
-    meaning: 'Venter på, at nogen producerer noget: data, dokumenter, adgange',
+    meaning: 'Waiting for someone to produce something: data, documents, access',
     countermeasure:
-      'Bed ikke om materialet. Sæt en fælles arbejdssession, hvor I laver det sammen. Send skabelon og eksempel på forhånd.',
+      'Do not ask for the material. Book a working session and produce it together. Send a template and an example beforehand.',
     saving: [50, 70],
-    effortNote: 'den koster én fælles arbejdssession i stedet for en række rykkere',
+    effortNote: 'it costs one shared working session instead of a string of reminders',
     color: '#6E85B5',
   },
   {
-    key: 'prioritering',
-    label: 'Prioritering',
+    key: 'priority',
+    label: 'Priority',
     human: true,
-    meaning: 'Opgaven ligger stille, fordi den ikke er vigtig nok lige nu',
+    meaning: 'The task sits still because it is not important enough right now',
     countermeasure:
-      'Skab et synligt resultat tidligt, og find en person hos kunden, der har noget på spil i, at det lykkes. Lav prioritering er sjældent modvilje, det er fravær af konsekvens.',
+      'Create a visible result early, and find someone at the customer with something at stake in it succeeding. Low priority is rarely reluctance; it is the absence of consequence.',
     saving: [30, 50],
     effortNote:
-      'den kræver, at nogen hos kunden har noget på spil — ikke at I arbejder hurtigere',
+      'it requires someone at the customer to have something at stake — not that your team works faster',
     color: '#A9B6D1',
   },
   {
-    key: 'teknisk',
-    label: 'Teknisk',
+    key: 'technical',
+    label: 'Technical',
     human: false,
-    meaning: 'Systemet kører, integration synkroniserer, tredjepart svarer maskinelt',
+    meaning: 'The system is running, an integration is syncing, a third party is answering by machine',
     countermeasure:
-      'Undersøg om trinnet kan køre parallelt med andet arbejde frem for at blokere. Ellers er det her, automatisering faktisk giver mening.',
+      'Check whether the step can run alongside other work instead of blocking it. Otherwise this is where automation genuinely helps.',
     saving: [20, 50],
-    effortNote: 'den er den eneste af de fem, hvor automatisering faktisk er svaret',
+    effortNote: 'it is the only one of the five where automation is actually the answer',
     color: '#C9CFDB',
   },
 ]
 
 export const CAUSE_BY_KEY = Object.fromEntries(WAIT_CAUSES.map((c) => [c.key, c]))
 
-// Et trin uden aarsag er uoplyst - ikke "leverance". Faldt vi tilbage paa en
-// standardvaerdi, ville vaerktoejet praesentere et gaet som en oplysning, og
-// den menneskelige andel ville altid vise 100 %.
+// A step without a cause is unspecified - not "delivery". If it fell back to a
+// default, the tool would present a guess as a finding, and the human share
+// would always read 100 %.
 export const UNSPECIFIED = {
   key: null,
-  label: 'Uoplyst',
+  label: 'Unspecified',
   human: null,
-  meaning: 'Ventetiden er registreret, men årsagen er ikke sat',
+  meaning: 'The wait is recorded, but no cause has been set',
   color: '#EDEFF4',
 }
 
@@ -96,72 +98,72 @@ export const causeOrUnspecified = (key) => CAUSE_BY_KEY[key] ?? UNSPECIFIED
 let idCounter = 0
 export const newId = () => `s${Date.now().toString(36)}${(idCounter++).toString(36)}`
 
-// Det forudindlaeste eksempel: et AI-drevet afstemningsprodukt til regnskab.
+// The preloaded example: an AI-driven reconciliation product for accounting.
 export const EXAMPLE_STEPS = [
-  { id: 'ex1', name: 'Kickoff-møde og forventningsafstemning', owner: 'os', processHours: 2, waitDaysBefore: 0, waitCause: 'kalender', isValueMoment: false },
-  { id: 'ex2', name: 'Kunden leverer kontoplan og systemadgange', owner: 'kunde', processHours: 3, waitDaysBefore: 5, waitCause: 'leverance', isValueMoment: false },
-  { id: 'ex3', name: 'Opsætning af integration', owner: 'os', processHours: 6, waitDaysBefore: 1, waitCause: 'teknisk', isValueMoment: false },
-  { id: 'ex4', name: 'Datavalidering og fejlsøgning', owner: 'os', processHours: 4, waitDaysBefore: 0, waitCause: 'leverance', isValueMoment: false },
-  { id: 'ex5', name: 'Kunden godkender kontoplansmapping', owner: 'kunde', processHours: 2, waitDaysBefore: 4, waitCause: 'beslutning', isValueMoment: false },
-  { id: 'ex6', name: 'Første automatiske afstemning kører', owner: 'os', processHours: 3, waitDaysBefore: 1, waitCause: 'teknisk', isValueMoment: true },
-  { id: 'ex7', name: 'Træning af kundens team', owner: 'os', processHours: 4, waitDaysBefore: 6, waitCause: 'kalender', isValueMoment: false },
-  { id: 'ex8', name: 'Go-live og overdragelse til drift', owner: 'os', processHours: 2, waitDaysBefore: 2, waitCause: 'kalender', isValueMoment: false },
+  { id: 'ex1', name: 'Kickoff meeting and expectation setting', owner: 'us', processHours: 2, waitDaysBefore: 0, waitCause: 'calendar', isValueMoment: false },
+  { id: 'ex2', name: 'Customer supplies chart of accounts and system access', owner: 'customer', processHours: 3, waitDaysBefore: 5, waitCause: 'delivery', isValueMoment: false },
+  { id: 'ex3', name: 'Integration setup', owner: 'us', processHours: 6, waitDaysBefore: 1, waitCause: 'technical', isValueMoment: false },
+  { id: 'ex4', name: 'Data validation and troubleshooting', owner: 'us', processHours: 4, waitDaysBefore: 0, waitCause: 'delivery', isValueMoment: false },
+  { id: 'ex5', name: 'Customer approves the account mapping', owner: 'customer', processHours: 2, waitDaysBefore: 4, waitCause: 'decision', isValueMoment: false },
+  { id: 'ex6', name: 'First automated reconciliation runs', owner: 'us', processHours: 3, waitDaysBefore: 1, waitCause: 'technical', isValueMoment: true },
+  { id: 'ex7', name: 'Training the customer team', owner: 'us', processHours: 4, waitDaysBefore: 6, waitCause: 'calendar', isValueMoment: false },
+  { id: 'ex8', name: 'Go-live and handover to operations', owner: 'us', processHours: 2, waitDaysBefore: 2, waitCause: 'calendar', isValueMoment: false },
 ]
 
 export const READINESS_QUESTIONS = [
   {
     key: 'dataQuality',
-    label: 'Hvordan ser kundens data ud?',
-    help: 'Rodede data er den hyppigste enkeltårsag til, at et onboardingforløb skrider.',
-    options: ['Rene og strukturerede', 'Blandet', 'Rodede'],
+    label: 'What shape is the customer data in?',
+    help: 'Messy data is the single most common reason an onboarding flow slips.',
+    options: ['Clean and structured', 'Mixed', 'Messy'],
     countermeasures: [
       null,
-      'Bed om et udtræk af de mest brugte konti før opsætning, og gennemgå det sammen. Blandet datakvalitet opdages sjældent, før den koster tid i valideringen.',
-      'Afsæt et separat trin til datarensning før opsætning, og lav det sammen med kunden. Rodede data opdages ellers først under validering, hvor det koster dobbelt.',
+      'Ask for an extract of the most-used accounts before setup, and review it together. Mixed data quality rarely shows up until it costs time in validation.',
+      'Set aside a separate step for data cleaning before setup, and do it with the customer. Otherwise messy data surfaces during validation, where it costs twice.',
     ],
   },
   {
     key: 'champion',
-    label: 'Er der en ildsjæl hos kunden?',
-    help: 'En person, der vil have projektet i mål, og som andre lytter til.',
-    options: ['Ja, en klar ildsjæl', 'Uklart', 'Nej, ingen'],
+    label: 'Is there a champion at the customer?',
+    help: 'Someone who wants the project finished, and who others listen to.',
+    options: ['Yes, a clear champion', 'Unclear', 'No one'],
     countermeasures: [
       null,
-      'Få sat navn på den ansvarlige ved kickoff. Er der tvivl om, hvem det er, er der som regel ingen.',
-      'Bed om en navngiven ansvarlig hos kunden ved kickoff, ikke en afdeling. Uden en person med navn bliver forløbet alles og dermed ingens.',
+      'Get a name on the responsible person at kickoff. If it is unclear who it is, there usually is not one.',
+      'Ask for a named owner at the customer at kickoff, not a department. Without a person with a name, the flow belongs to everyone and therefore to no one.',
     ],
   },
   {
     key: 'decisionAuthority',
-    label: 'Hvor tæt er beslutningstageren på?',
-    help: 'Afstand til beslutninger bliver til ventetid, ikke til færre beslutninger.',
-    options: ['Med i lokalet', 'Delvist involveret', 'Langt væk'],
+    label: 'How close is the decision-maker?',
+    help: 'Distance to decisions turns into wait time, not into fewer decisions.',
+    options: ['In the room', 'Partly involved', 'Far away'],
     countermeasures: [
       null,
-      'Aftal ved kickoff, hvilke beslutninger der kan træffes i lokalet, og hvilke der skal videre. Så bliver ventetiden i det mindste forudsigelig.',
-      'Få afklaret på forhånd, hvilke beslutninger der kan træffes uden den øverste, og hvilke der ikke kan. Ellers bliver hver godkendelse til en ventepost.',
+      'Agree at kickoff which decisions can be made in the room and which have to go further. At least then the wait becomes predictable.',
+      'Establish up front which decisions can be made without the top, and which cannot. Otherwise every approval turns into a queue.',
     ],
   },
   {
     key: 'systemExperience',
-    label: 'Har kunden prøvet noget lignende før?',
-    help: 'Erfaring med tilsvarende systemer forkorter både oplæring og godkendelser.',
-    options: ['Vant til lignende', 'Lidt erfaring', 'Helt nyt for dem'],
+    label: 'Has the customer done something like this before?',
+    help: 'Experience with similar systems shortens both training and approvals.',
+    options: ['Used to similar', 'A little experience', 'Entirely new to them'],
     countermeasures: [
       null,
-      'Læg en kort opfølgning ind et par uger efter træningen. Det er dér, spørgsmålene kommer, ikke under selve oplæringen.',
-      'Regn med mere træning end planlagt, og læg den tidligere. Uerfarne brugere stiller ikke spørgsmål, de udskyder brugen.',
+      'Schedule a short follow-up a couple of weeks after the training. That is when the questions arrive, not during the session itself.',
+      'Plan for more training than you think, and place it earlier. Inexperienced users do not ask questions; they postpone using the product.',
     ],
   },
   {
     key: 'changeAppetite',
-    label: 'Hvor stor er lysten til forandring?',
-    help: 'Lav forandringslyst viser sig sjældent som modstand. Den viser sig som udskudte møder.',
-    options: ['Høj', 'Middel', 'Lav'],
+    label: 'How much appetite is there for change?',
+    help: 'Low appetite for change rarely shows up as resistance. It shows up as postponed meetings.',
+    options: ['High', 'Medium', 'Low'],
     countermeasures: [
       null,
-      'Vælg det første anvendelsesområde, hvor gevinsten er tydeligst for dem, der skal bruge det. Middel forandringslyst tipper på synlige resultater.',
-      'Find det ene sted, hvor det nye løser et problem, de faktisk mærker, og start dér. Lav forandringslyst viser sig som udskudte møder, ikke som modstand.',
+      'Pick the first use case where the gain is clearest to the people who have to use it. Medium appetite tips on visible results.',
+      'Find the one place where the new thing solves a problem they actually feel, and start there. Low appetite for change shows up as postponed meetings, not as resistance.',
     ],
   },
 ]
@@ -175,18 +177,18 @@ export const DEFAULT_READINESS = {
 }
 
 export const MULTIPLIER_BANDS = [
-  { max: 1, multiplier: 0.8, label: 'Bedre end planlagt' },
-  { max: 3, multiplier: 1.0, label: 'Som planlagt' },
-  { max: 5, multiplier: 1.3, label: 'Noget længere' },
-  { max: 7, multiplier: 1.6, label: 'Væsentligt længere' },
-  { max: 10, multiplier: 2.0, label: 'Markant længere' },
+  { max: 1, multiplier: 0.8, label: 'Better than planned' },
+  { max: 3, multiplier: 1.0, label: 'As planned' },
+  { max: 5, multiplier: 1.3, label: 'Somewhat longer' },
+  { max: 7, multiplier: 1.6, label: 'Substantially longer' },
+  { max: 10, multiplier: 2.0, label: 'Markedly longer' },
 ]
 
 export function bandFor(score) {
   return MULTIPLIER_BANDS.find((b) => score <= b.max) ?? MULTIPLIER_BANDS[MULTIPLIER_BANDS.length - 1]
 }
 
-// Felterne kan midlertidigt vaere tomme strenge, mens brugeren taster.
+// Fields may briefly hold an empty string while the user is typing.
 export function num(v) {
   const n = typeof v === 'number' ? v : parseFloat(String(v ?? '').replace(',', '.'))
   return Number.isFinite(n) && n >= 0 ? n : 0
@@ -204,7 +206,7 @@ export function computeMetrics(steps) {
 
   const flowEfficiency = totalLeadTimeDays > 0 ? (totalProcessDays / totalLeadTimeDays) * 100 : null
 
-  // Foerste trin markeret som vaerdioejeblik vinder, hvis flere er sat.
+  // If several steps are flagged, the first one marked as the value moment wins.
   const valueIndex = steps.findIndex((s) => s.isValueMoment)
   const ttvDays =
     valueIndex >= 0
@@ -218,8 +220,8 @@ export function computeMetrics(steps) {
     if (steps[i].owner !== steps[i - 1].owner) handoffs++
   }
 
-  // Ventetid foer et trin tilskrives den, der skal udfoere trinnet.
-  const waitByOwner = { os: 0, kunde: 0, tredjepart: 0 }
+  // Wait before a step is attributed to whoever has to carry that step out.
+  const waitByOwner = { us: 0, customer: 0, thirdParty: 0 }
   const waitByCause = {}
   let humanWaitDays = 0
   let unspecifiedWaitDays = 0
@@ -235,7 +237,7 @@ export function computeMetrics(steps) {
     waitByCause[cause.key] = (waitByCause[cause.key] || 0) + days
     if (cause.human) humanWaitDays += days
   }
-  // Andelen maales af den ventetid, brugeren faktisk har klassificeret.
+  // The share is measured against the wait the user has actually classified.
   const classifiedWaitDays = totalWaitDays - unspecifiedWaitDays
   const humanWaitShare =
     classifiedWaitDays > 0 ? (humanWaitDays / classifiedWaitDays) * 100 : null
@@ -278,12 +280,13 @@ export function computeMetrics(steps) {
 export function computeReadiness(metrics, readiness) {
   const score = READINESS_QUESTIONS.reduce((sum, q) => sum + (Number(readiness[q.key]) || 0), 0)
   const band = bandFor(score)
-  const customerWait = metrics.waitByOwner.kunde
-  const otherWait = metrics.waitByOwner.os + metrics.waitByOwner.tredjepart
+  const customerWait = metrics.waitByOwner.customer
+  const otherWait = metrics.waitByOwner.us + metrics.waitByOwner.thirdParty
   const realisticWaitDays = customerWait * band.multiplier + otherWait
   const realisticLeadTimeDays = realisticWaitDays + metrics.totalProcessDays
 
-  // Modtraek for de svar, der scorer daarligt. Et tal uden en udvej er bare en dom.
+  // A countermeasure for each answer that scores badly. A number with no way
+  // out is just a verdict.
   const actions = READINESS_QUESTIONS.map((q) => {
     const value = Number(readiness[q.key]) || 0
     const text = q.countermeasures[value]
@@ -301,14 +304,14 @@ export function computeReadiness(metrics, readiness) {
   }
 }
 
-// Hvad ville der ske, hvis de tre stoerste spildposter blev haandteret?
-// Intervallerne kommer fra tommelfingerreglerne pr. aarsag, ikke fra brugerens data.
+// What would happen if the three biggest delays were handled?
+// The ranges come from the rules of thumb per cause, not from the user's data.
 export function computeImprovement(metrics) {
   const top = metrics.topWaits
   if (!top.length || metrics.totalLeadTimeDays <= 0) return null
 
-  // En post uden aarsag har intet besparelsesinterval. Den springes over,
-  // frem for at blive gaettet ind i et tal, brugeren ikke har grundlag for.
+  // A delay without a cause has no saving range. It is skipped rather than
+  // guessed into a number the user has no basis for.
   let minSaved = 0
   let maxSaved = 0
   let usedPosts = 0
@@ -333,9 +336,9 @@ export function computeImprovement(metrics) {
   return { minSaved, maxSaved, leadLow, leadHigh, flowLow, flowHigh, usedPosts, skippedDays }
 }
 
-// Hvad goer man foerst? Den aarsag, der realistisk frigiver flest dage.
-// Rangeringen gaar paa hele forloebet, ikke kun de tre stoerste poster, fordi
-// et modtraek mod en aarsag rammer alle de steder, aarsagen optraeder.
+// What do you do first? The cause that realistically frees up the most days.
+// The ranking covers the whole flow, not just the three biggest delays, because
+// a countermeasure against a cause hits every place that cause appears.
 export function computeStartHere(metrics) {
   const ranked = Object.entries(metrics.waitByCause)
     .map(([key, days]) => {
@@ -351,7 +354,7 @@ export function computeStartHere(metrics) {
   const [first, second] = ranked
   return {
     ...first,
-    // Uden en toer at maale mod giver "mere end nogen anden" ingen mening.
+    // Without a runner-up to measure against, "more than any other" means nothing.
     clearlyLargest: !second || first.expectedSaving > second.expectedSaving + 1e-9,
     causeCount: ranked.length,
   }
@@ -366,7 +369,7 @@ export function computeAdoption(metrics, adoptionDays) {
   }
 }
 
-// Byggeklodserne til tidslinjen: skiftevis ventetid og arbejde, i kalendertid.
+// The building blocks for the timeline: wait and work in turn, in calendar time.
 export function buildBlocks(steps) {
   const blocks = []
   let cursor = 0

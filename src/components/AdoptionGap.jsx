@@ -7,21 +7,21 @@ export default function AdoptionGap({ metrics, adoption, adoptionDays, onChange 
   return (
     <section className="card" aria-labelledby="adoption-heading">
       <div className="card-head">
-        <h2 id="adoption-heading">Adoptionsgabet</h2>
-        <p className="note">Tilgængelig værdi er ikke det samme som brugt værdi</p>
+        <h2 id="adoption-heading">The adoption gap</h2>
+        <p className="note">Value available is not the same as value used</p>
       </div>
       <div className="card-body">
         <p className="chart-caption" style={{ marginTop: 0 }}>
-          Time-to-value måler, hvornår værdien er tilgængelig. Det er ikke det samme som, hvornår
-          den er taget i brug. Et system kan være perfekt implementeret og stadig stå ubrugt, fordi
-          mennesker har travlt og har gjort det på en anden måde i årevis. Gabet mellem de to er,
-          hvor frafald fødes.
+          Time-to-value measures when the value becomes available. That is not the same as when it
+          is put to use. A system can be implemented perfectly and still sit unused, because people
+          are busy and have done it another way for years. The gap between the two is where churn
+          is born.
         </p>
 
         <div className="adoption-input">
           <label htmlFor="adoption-days">
-            Hvor lang tid går der typisk fra go-live, til kundens team bruger løsningen i deres
-            daglige arbejde?
+            How long does it typically take from go-live until the customer's team uses the solution
+            in their daily work?
           </label>
           <div className="field">
             <input
@@ -34,7 +34,7 @@ export default function AdoptionGap({ metrics, adoption, adoptionDays, onChange 
               onChange={(e) => onChange(e.target.value)}
               onFocus={(e) => e.target.select()}
             />
-            <span className="unit">dage</span>
+            <span className="unit">days</span>
           </div>
         </div>
 
@@ -44,68 +44,68 @@ export default function AdoptionGap({ metrics, adoption, adoptionDays, onChange 
               <div className="compare-cell">
                 <div className="compare-value">
                   {hasTtv ? fmt(metrics.ttvDays, 1) : '—'}
-                  <span className="suffix">dage</span>
+                  <span className="suffix">days</span>
                 </div>
                 <div className="compare-label">Time-to-value</div>
               </div>
               <div className="compare-cell">
                 <div className="compare-value delta">
                   {'+' + fmt(adoption.days, adoption.days % 1 === 0 ? 0 : 1)}
-                  <span className="suffix">dage</span>
+                  <span className="suffix">days</span>
                 </div>
-                <div className="compare-label">Adoptionsgab</div>
+                <div className="compare-label">Adoption gap</div>
               </div>
               <div className="compare-cell highlight">
                 <div className="compare-value">
                   {adoption.realTimeToValue !== null ? (
                     <>
-                      <span className="prefix">cirka</span>
+                      <span className="prefix">about</span>
                       {fmtEstimate(adoption.realTimeToValue)}
-                      <span className="suffix">dage</span>
+                      <span className="suffix">days</span>
                     </>
                   ) : (
                     '—'
                   )}
                 </div>
-                <div className="compare-label">Reel time-to-value</div>
+                <div className="compare-label">Real time-to-value</div>
               </div>
             </div>
 
             <p className="readiness-summary">
-              Time-to-value måler, hvornår værdien er tilgængelig. Adoption måler, hvornår den
-              bliver brugt. Forskellen er{' '}
+              Time-to-value measures when the value becomes available. Adoption measures when it
+              gets used. The difference is{' '}
               <b>
                 {fmt(adoption.days, adoption.days % 1 === 0 ? 0 : 1)} {dayWord(adoption.days)}
               </b>
-              , hvor kunden betaler uden at få noget ud af det — og hvor beslutningen om at
-              fortsætte reelt træffes.
+              , during which the customer is paying without getting anything out of it — and during
+              which the decision to continue is really made.
             </p>
 
             <p className="disclaimer">
-              Time-to-value er regnet af det, du har tastet ind, og vises med decimal.
-              Adoptionsgabet er et gæt, og summen arver gættets usikkerhed — derfor står den
-              reelle time-to-value som et rundt tal.
+              Time-to-value is calculated from what you entered, and is shown with a decimal. The
+              adoption gap is a guess, and the sum inherits the uncertainty of that guess — which is
+              why the real time-to-value is given as a round number.
             </p>
 
             {!hasTtv ? (
               <p className="disclaimer">
-                Der er ikke markeret et værdiøjeblik i forløbet, så den reelle time-to-value kan
-                ikke regnes ud. Marker det trin, hvor kunden første gang oplever værdi.
+                No value moment is marked in the flow, so the real time-to-value cannot be
+                calculated. Mark the step where the customer first experiences value.
               </p>
             ) : null}
           </>
         ) : (
           <p className="hint">
-            De fleste måler det ikke. Det er i sig selv en pointe: forløbet erklæres færdigt ved
-            go-live, og hvad der sker bagefter, er ingens tal. Et kvalificeret gæt er nok til at
-            gøre gabet synligt.
+            Most people do not measure it. That is a finding in itself: the flow is declared finished
+            at go-live, and what happens afterwards is nobody's number. An informed guess is enough
+            to make the gap visible.
           </p>
         )}
 
         <p className="closing-note">
-          Et onboardingforløb kan optimeres til perfektion og stadig fejle, hvis menneskene på den
-          anden side ikke ændrer vaner. Procesarbejde får kunden hen til værdien. Adfærd afgør, om
-          de bruger den.
+          An onboarding flow can be optimised to perfection and still fail, if the people on the
+          other side do not change their habits. Process work gets the customer to the value.
+          Behaviour decides whether they use it.
         </p>
       </div>
     </section>

@@ -9,7 +9,13 @@ import {
   computeAdoption,
   newId,
 } from './model.js'
-import { encodeStateToHash, readStateFromHash, saveLocal, readLocal } from './persist.js'
+import {
+  encodeStateToHash,
+  readStateFromHash,
+  saveLocal,
+  readLocal,
+  isUntouchedDanishExample,
+} from './persist.js'
 import { downloadPng, downloadSvg } from './exportImage.js'
 import StepList from './components/StepList.jsx'
 import Metrics from './components/Metrics.jsx'
@@ -20,7 +26,7 @@ import AdoptionGap from './components/AdoptionGap.jsx'
 
 const freshExample = () => EXAMPLE_STEPS.map((s) => ({ ...s }))
 
-// Foerst et delt link, saa gemt arbejde, ellers eksemplet. Brugeren moeder aldrig en tom formular.
+// A shared link first, then saved work, otherwise the example. The user never meets an empty form.
 function restored(loaded, source) {
   return {
     steps: loaded.steps,
@@ -30,12 +36,24 @@ function restored(loaded, source) {
   }
 }
 
+const fresh = () => ({
+  steps: freshExample(),
+  readiness: DEFAULT_READINESS,
+  adoptionDays: null,
+  source: 'example',
+})
+
 function initialState() {
   const shared = readStateFromHash()
   if (shared && shared.steps.length) return restored(shared, 'link')
   const stored = readLocal()
-  if (stored && stored.steps.length) return restored(stored, 'gemt')
-  return { steps: freshExample(), readiness: DEFAULT_READINESS, adoptionDays: null, source: 'eksempel' }
+  // The tool shipped in Danish first. Saved work is the user's own and is kept,
+  // but a stored copy of the old demo that was never edited would show Danish
+  // step names on an English page, so that one is replaced.
+  if (stored && stored.steps.length && !isUntouchedDanishExample(stored.steps)) {
+    return restored(stored, 'saved')
+  }
+  return fresh()
 }
 
 export default function App() {
@@ -45,8 +63,8 @@ export default function App() {
   const svgRef = useRef(null)
   const statusTimer = useRef(null)
 
-  // Adressen maa ikke beskrive en tilstand, der ikke laengere gaelder. Saa snart
-  // brugeren retter noget, er det delte link foraeldet, og hashen fjernes.
+  // The address must not describe a state that no longer holds. The moment the user
+  // changes anything, the shared link is stale, and the hash is removed.
   const clearHash = useCallback(() => {
     if (window.location.hash.startsWith('#p=')) {
       history.replaceState(null, '', window.location.pathname + window.location.search)
@@ -89,7 +107,7 @@ export default function App() {
 
   useEffect(() => () => clearTimeout(statusTimer.current), [])
 
-  // Et delt link indsat i adresselinjen paa en aaben fane giver ingen genindlaesning.
+  // A shared link pasted into the address bar of an open tab causes no reload.
   useEffect(() => {
     const onHashChange = () => {
       const shared = readStateFromHash()
@@ -129,7 +147,7 @@ export default function App() {
 
   const removeStep = useCallback((id) => setSteps((list) => list.filter((s) => s.id !== id)), [setSteps])
 
-  // Kun ét trin kan vaere vaerdioejeblikket. At saette et nyt rydder det gamle.
+  // Only one step can be the value moment. Setting a new one clears the old.
   const setValueMoment = useCallback(
     (id, on) => setSteps((list) => list.map((s) => ({ ...s, isValueMoment: on && s.id === id }))),
     [setSteps]
@@ -142,7 +160,7 @@ export default function App() {
         {
           id: newId(),
           name: '',
-          owner: 'os',
+          owner: 'us',
           processHours: 1,
           waitDaysBefore: 0,
           waitCause: null,
@@ -153,31 +171,31 @@ export default function App() {
   )
 
   const reset = useCallback(() => {
-    setState({ steps: freshExample(), readiness: DEFAULT_READINESS, adoptionDays: null, source: 'eksempel' })
+    setState(fresh())
     if (window.location.hash) history.replaceState(null, '', window.location.pathname + window.location.search)
-    say('Eksemplet er hentet tilbage.')
+    say('The example is back.')
   }, [say])
 
   const share = useCallback(async () => {
     const hash = encodeStateToHash({ steps, readiness, adoptionDays })
-    if (!hash) return say('Linket kunne ikke laves.')
+    if (!hash) return say('The link could not be created.')
     const url = window.location.origin + window.location.pathname + window.location.search + hash
     history.replaceState(null, '', hash)
     try {
       await navigator.clipboard.writeText(url)
-      say('Link kopieret. Hele forløbet ligger i adressen.')
+      say('Link copied. The whole flow is in the address.')
     } catch {
-      say('Linket står nu i adresselinjen og kan kopieres derfra.')
+      say('The link is now in the address bar and can be copied from there.')
     }
   }, [steps, readiness, adoptionDays, say])
 
   const exportSvg = useCallback(() => {
-    say(downloadSvg(svgRef.current) ? 'Tidslinjen er hentet som SVG.' : 'Der er ingen tidslinje at hente.')
+    say(downloadSvg(svgRef.current) ? 'Timeline downloaded as SVG.' : 'There is no timeline to download.')
   }, [say])
 
   const exportPng = useCallback(async () => {
     const ok = await downloadPng(svgRef.current)
-    say(ok ? 'Tidslinjen er hentet som PNG.' : 'PNG kunne ikke laves. Prøv SVG i stedet.')
+    say(ok ? 'Timeline downloaded as PNG.' : 'The PNG could not be created. Try SVG instead.')
   }, [say])
 
   return (
@@ -185,9 +203,9 @@ export default function App() {
       <header className="masthead">
         <div className="masthead-inner">
           <h1>Onboarding Flow Analyser</h1>
-          <p className="lede">Kortlæg et onboardingforløb, og se hvor tiden faktisk går.</p>
+          <p className="lede">Map an onboarding flow, and see where the time actually goes.</p>
           <p className="byline">
-            Et lille værktøj til at gøre time-to-value konkret. Bygget af Omar Slaiman.
+            A small tool for making time-to-value concrete. Built by Omar Slaiman.
           </p>
         </div>
       </header>
@@ -195,8 +213,8 @@ export default function App() {
       <main className="page">
         {source === 'link' ? (
           <p className="hint" style={{ marginTop: 20 }}>
-            Dette forløb er indlæst fra et delt link. Ret frit i det — ændringerne rammer kun din
-            egen browser.
+            This flow was loaded from a shared link. Edit it freely — the changes only reach your
+            own browser.
           </p>
         ) : null}
 
@@ -253,16 +271,16 @@ export default function App() {
 
         <div className="toolbar" style={{ marginTop: 20 }}>
           <button type="button" className="btn" onClick={share}>
-            Kopiér link til dette forløb
+            Copy link to this flow
           </button>
           <button type="button" className="btn" onClick={exportSvg}>
-            Hent tidslinje som SVG
+            Download timeline as SVG
           </button>
           <button type="button" className="btn" onClick={exportPng}>
-            Hent som PNG
+            Download as PNG
           </button>
           <button type="button" className="btn" onClick={() => window.print()}>
-            Print eller gem som PDF
+            Print or save as PDF
           </button>
           <span className="status-msg" role="status" aria-live="polite">
             {status}
@@ -270,23 +288,23 @@ export default function App() {
         </div>
 
         <footer className="footer">
-          <h2>Om værktøjet</h2>
+          <h2>About this tool</h2>
           <p>
-            Et onboardingforløb er en proces som enhver anden: det har overleveringer, ventetid og
-            fejlkilder. Og time-to-value, som abonnementsforretninger måler på, er det samme som
-            gennemløbstid, bare sagt i et andet fagsprog.
+            An onboarding flow is a process like any other: it has handoffs, waiting and places
+            where things go wrong. And time-to-value, the figure subscription businesses measure, is
+            the same thing as lead time, just said in a different vocabulary.
           </p>
           <p>
-            Værktøjet regner ikke noget ud, man ikke kunne regne i hånden. Formålet er at gøre det
-            synligt, hvor tiden faktisk går, så samtalen flytter sig fra “hvem er langsom” til “hvor
-            ligger arbejdet stille”.
+            The tool calculates nothing you could not work out by hand. The point is to make it
+            visible where the time actually goes, so the conversation moves from “who is slow” to
+            “where is the work sitting still”.
           </p>
           <p>
-            Tallene er så gode som de skøn, der tastes ind. Readiness-delen er en tommelfingerregel,
-            ikke en model. Intet forlader din browser: alt regnes lokalt, og et delt link indeholder
-            kun det, du selv har tastet.
+            The figures are only as good as the estimates typed in. The readiness part is a rule of
+            thumb, not a model. Nothing leaves your browser: everything is calculated locally, and a
+            shared link contains only what you entered yourself.
           </p>
-          <p>Bygget af Omar Slaiman</p>
+          <p>Built by Omar Slaiman</p>
         </footer>
       </main>
     </>

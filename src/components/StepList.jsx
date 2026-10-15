@@ -35,13 +35,13 @@ function Step({ step, index, total, onChange, onMove, onRemove, onSetValueMoment
           className="step-name"
           type="text"
           value={step.name}
-          placeholder="Hvad sker der i dette trin?"
-          aria-label={'Navn på trin ' + (index + 1)}
+          placeholder="What happens in this step?"
+          aria-label={'Name of step ' + (index + 1)}
           onChange={(e) => onChange({ name: e.target.value })}
         />
 
         <div className="step-fields">
-          <div className="owner-group" role="group" aria-label={'Hvem udfører trin ' + (index + 1)}>
+          <div className="owner-group" role="group" aria-label={'Who carries out step ' + (index + 1)}>
             {OWNERS.map((o) => (
               <button
                 key={o.key}
@@ -56,36 +56,36 @@ function Step({ step, index, total, onChange, onMove, onRemove, onSetValueMoment
 
           <NumberField
             id={'ph-' + step.id}
-            label="Arbejde"
-            unit="t"
+            label="Work"
+            unit="h"
             step="0.5"
             value={step.processHours}
             onChange={(v) => onChange({ processHours: v })}
-            title="Den tid, hvor nogen faktisk arbejder på opgaven"
+            title="The time someone is actually working on the task"
           />
 
           <NumberField
             id={'wd-' + step.id}
-            label="Ventetid før"
+            label="Wait before"
             unit="d"
             step="0.5"
             value={step.waitDaysBefore}
             onChange={(v) => onChange({ waitDaysBefore: v })}
-            title="Kalenderdage, hvor opgaven ligger stille, før dette trin går i gang"
+            title="Calendar days the task sits still before this step gets going"
           />
 
-          {/* Aarsagen vises foerst, naar der faktisk er ventetid at forklare. */}
+          {/* The cause only appears once there is wait to explain. */}
           {hasWait ? (
             <div className="field">
-              <label htmlFor={'wc-' + step.id}>Fordi</label>
+              <label htmlFor={'wc-' + step.id}>Because</label>
               <select
                 id={'wc-' + step.id}
                 className={'cause-select' + (cause ? '' : ' needs-answer')}
                 value={cause}
-                title="Hvorfor lå opgaven stille? Årsagen afgør modtrækket."
+                title="Why did the task sit still? The cause decides the countermeasure."
                 onChange={(e) => onChange({ waitCause: e.target.value || null })}
               >
-                <option value="">Vælg årsag …</option>
+                <option value="">Pick a cause…</option>
                 {WAIT_CAUSES.map((c) => (
                   <option key={c.key} value={c.key} title={c.meaning}>
                     {c.label}
@@ -99,11 +99,11 @@ function Step({ step, index, total, onChange, onMove, onRemove, onSetValueMoment
             type="button"
             className="value-toggle"
             aria-pressed={step.isValueMoment}
-            title="Marker det første trin, hvor kunden oplever reel værdi"
+            title="Mark the first step where the customer experiences real value"
             onClick={() => onSetValueMoment(!step.isValueMoment)}
           >
             <span aria-hidden="true">{step.isValueMoment ? '★' : '☆'}</span>
-            Første værdi
+            First value
           </button>
         </div>
       </div>
@@ -113,7 +113,7 @@ function Step({ step, index, total, onChange, onMove, onRemove, onSetValueMoment
           type="button"
           className="icon-btn"
           disabled={index === 0}
-          aria-label={'Flyt trin ' + (index + 1) + ' op'}
+          aria-label={'Move step ' + (index + 1) + ' up'}
           onClick={() => onMove(-1)}
         >
           <span aria-hidden="true">{'▲'}</span>
@@ -122,7 +122,7 @@ function Step({ step, index, total, onChange, onMove, onRemove, onSetValueMoment
           type="button"
           className="icon-btn"
           disabled={index === total - 1}
-          aria-label={'Flyt trin ' + (index + 1) + ' ned'}
+          aria-label={'Move step ' + (index + 1) + ' down'}
           onClick={() => onMove(1)}
         >
           <span aria-hidden="true">{'▼'}</span>
@@ -130,7 +130,7 @@ function Step({ step, index, total, onChange, onMove, onRemove, onSetValueMoment
         <button
           type="button"
           className="icon-btn danger"
-          aria-label={'Slet trin ' + (index + 1)}
+          aria-label={'Delete step ' + (index + 1)}
           onClick={onRemove}
         >
           <span aria-hidden="true">{'×'}</span>
@@ -144,21 +144,21 @@ export default function StepList({ steps, onChangeStep, onMoveStep, onRemoveStep
   return (
     <section className="card" aria-labelledby="steps-heading">
       <div className="card-head">
-        <h2 id="steps-heading">Forløbet</h2>
-        <p className="note">Ret trinnene, så de matcher jeres eget. Alt regnes om med det samme.</p>
+        <h2 id="steps-heading">The flow</h2>
+        <p className="note">Edit the steps to match your own. Everything recalculates as you go.</p>
       </div>
       <div className="card-body">
         <p className="hint">
-          Ved du det ikke præcist, så gæt. Et kvalificeret gæt er bedre end ingen kortlægning, og
-          du kan rette det senere. Feltet <b>fordi</b> er dit svar på, hvorfor opgaven lå stille;
-          værktøjet gætter det ikke selv. Det er årsagen, ikke ejeren, der afgør, hvad man kan
-          gøre ved ventetiden — og om ventetiden overhovedet er teknisk.
+          If you do not know exactly, estimate. An informed guess beats no map at all, and you can
+          correct it later. The <b>because</b> field is your answer to why the task sat still; the
+          tool does not guess it for you. It is the cause, not the owner, that decides what can be
+          done about the wait — and whether the wait is technical at all.
         </p>
 
         {steps.length === 0 ? (
           <p className="hint">
-            Der er ingen trin. Tilføj det første, eller hent eksemplet tilbage for at se, hvordan
-            værktøjet regner.
+            There are no steps. Add the first one, or bring the example back to see how the tool
+            calculates.
           </p>
         ) : (
           <ul className="steps">
@@ -179,10 +179,10 @@ export default function StepList({ steps, onChangeStep, onMoveStep, onRemoveStep
 
         <div className="toolbar">
           <button type="button" className="btn btn-primary" onClick={onAddStep}>
-            Tilføj trin
+            Add step
           </button>
           <button type="button" className="btn" onClick={onReset}>
-            Nulstil til eksempel
+            Reset to example
           </button>
         </div>
       </div>

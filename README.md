@@ -1,13 +1,15 @@
 # Onboarding Flow Analyser
 
-Et lille, selvstændigt webværktøj, der kortlægger et kundeonboardingforløb og oversætter det til
-to fagsprog på én gang: procesarbejde (procestid, gennemløbstid, flow-effektivitet,
-overleveringer) og SaaS/GTM (time-to-value).
+A small, self-contained web tool that maps a customer onboarding flow and translates it into two
+vocabularies at once: process work (process time, lead time, flow efficiency, handoffs) and
+SaaS/GTM (time-to-value).
 
-Påstanden, værktøjet skal gøre konkret: kundeonboarding er en proces som enhver anden, og
-time-to-value er gennemløbstid under et andet navn.
+The claim it is built to make concrete: customer onboarding is a process like any other, and
+time-to-value is lead time under another name.
 
-## Kom i gang
+Live at <https://omarslaiman.github.io/Repodo/>.
+
+## Getting started
 
 ```bash
 npm install
@@ -21,95 +23,98 @@ npm run dev
 npm run build
 ```
 
-Bygget output lander i `dist/` og kan hostes som statiske filer hvor som helst. `base` er sat til
-`./`, så det også virker fra en undermappe.
+The build lands in `dist/` and can be hosted as static files anywhere. `base` is set to `./`, so it
+also works from a subdirectory.
 
-## Sådan er det skruet sammen
+## How it is put together
 
-| Fil | Ansvar |
+| File | Responsibility |
 | --- | --- |
-| `src/model.js` | Datamodel, konstanter, eksemplet og alle beregninger. Ingen UI. |
-| `src/format.js` | Danske talformater ét sted. |
-| `src/persist.js` | localStorage og deling via base64 i URL-hash. |
-| `src/exportImage.js` | Hent tidslinjen som SVG eller PNG. |
-| `src/App.jsx` | State, rækkefølgen af sektioner, deling og eksport. |
-| `src/components/StepList.jsx` | Den redigerbare trinliste. |
-| `src/components/Metrics.jsx` | De fem nøgletal og udregningen bag dem. |
-| `src/components/Timeline.jsx` | Tidslinjen som håndtegnet SVG, med swimlanes. |
-| `src/components/WaitDistribution.jsx` | Ventetid efter ejer og efter årsag, spildposter, modtræk og potentiale. |
-| `src/components/Readiness.jsx` | De fem readiness-spørgsmål, det realistiske skøn og modtrækkene. |
-| `src/components/AdoptionGap.jsx` | Gabet mellem tilgængelig og brugt værdi. |
+| `src/model.js` | Data model, constants, the example and every calculation. No UI. |
+| `src/format.js` | Number formatting and the rounding rule, in one place. |
+| `src/persist.js` | localStorage, sharing via base64 in the URL hash, and legacy migration. |
+| `src/exportImage.js` | Download the timeline as SVG or PNG. |
+| `src/App.jsx` | State, the order of the sections, sharing and export. |
+| `src/components/StepList.jsx` | The editable list of steps. |
+| `src/components/Metrics.jsx` | The five key figures and the arithmetic behind them. |
+| `src/components/Timeline.jsx` | The timeline as hand-drawn SVG, with swimlanes. |
+| `src/components/WaitDistribution.jsx` | Waiting by owner and by cause, the biggest delays, countermeasures and potential. |
+| `src/components/Readiness.jsx` | The five readiness questions, the realistic estimate and the countermeasures. |
+| `src/components/AdoptionGap.jsx` | The gap between value available and value used. |
 
-Ingen backend, ingen database, intet login. Alt regnes i browseren. Ingen
-tredjepartsbiblioteker til grafik — SVG'en er tegnet i hånden.
+No backend, no database, no login. Everything is calculated in the browser. No third-party
+libraries for graphics — the SVG is drawn by hand.
 
-## Beregningerne
+## The calculations
 
-En arbejdsdag regnes som 7,4 timer (`HOURS_PER_DAY` i `src/model.js`).
+A working day counts as 7.4 hours (`HOURS_PER_DAY` in `src/model.js`).
 
 ```
-totalProcessDays  = sum(processHours) / 7.4
-totalWaitDays     = sum(waitDaysBefore)
-totalLeadTimeDays = totalWaitDays + totalProcessDays
-flowEfficiency    = totalProcessDays / totalLeadTimeDays * 100
-ttvDays           = sum(waitDaysBefore + processHours/7.4) til og med trinnet med isValueMoment
-handoffs          = antal gange owner skifter mellem to trin i træk
-waitByOwner       = ventetid før et trin tilskrives den, der skal udføre trinnet
-classifiedWaitDays = ventetid hvor waitCause er sat
-humanWaitDays      = sum(waitDaysBefore hvor waitCause er sat og ikke er "teknisk")
+totalProcessDays   = sum(processHours) / 7.4
+totalWaitDays      = sum(waitDaysBefore)
+totalLeadTimeDays  = totalWaitDays + totalProcessDays
+flowEfficiency     = totalProcessDays / totalLeadTimeDays * 100
+ttvDays            = sum(waitDaysBefore + processHours/7.4) up to the step with isValueMoment
+handoffs           = times owner changes between two consecutive steps
+waitByOwner        = waiting before a step is attributed to whoever carries that step out
+classifiedWaitDays = waiting where waitCause is set
+humanWaitDays      = sum(waitDaysBefore where waitCause is set and is not "technical")
 humanWaitShare     = humanWaitDays / classifiedWaitDays * 100
 ```
 
-### Årsag frem for ejer
+### Cause rather than owner
 
-Hvert trin har både en `owner` og en `waitCause`. Ejerskab fortæller, hvem der holder bolden.
-Årsagen fortæller, hvorfor den ligger stille — og det er årsagen, der afgør, hvad man kan gøre
-ved det. De fem årsager (`kalender`, `beslutning`, `leverance`, `prioritering`, `teknisk`) har
-hver et modtræk og et besparelsesinterval i `WAIT_CAUSES`.
+Every step carries both an `owner` and a `waitCause`. Ownership tells you who is holding the ball.
+The cause tells you why it is sitting still — and it is the cause that decides what can be done
+about it. The five causes (`calendar`, `decision`, `delivery`, `priority`, `technical`) each carry a
+countermeasure and a saving range in `WAIT_CAUSES`.
 
-Fire af de fem er menneskelige. Det giver nøgletallet **menneskelig ventetid**, som er værktøjets
-skarpeste pointe: man kan ikke automatisere sig ud af et forløb, hvor næsten al ventetid skyldes
-kalendere, beslutninger og prioriteringer.
+Four of the five are human. That gives the **human wait time** figure, which is the sharpest point
+the tool makes: you cannot automate your way out of a flow where nearly all the waiting comes down
+to calendars, decisions and priorities.
 
-**Uoplyst er en egen tilstand.** `waitCause: null` betyder, at brugeren ikke har svaret, og det
-falder aldrig tilbage på en standardværdi. Det er afgørende for troværdigheden: gjorde det det,
-ville hvert eneste trin tælle som den valgte standard, den menneskelige andel ville altid vise
-100 %, og alle modtræk ville være det samme. Uoplyst ventetid tælles derfor hverken som
-menneskelig eller teknisk, den vises som et stribet felt i bjælken, den holdes uden for
-potentialeberegningen, og en post uden årsag får en opfordring i stedet for et lånt modtræk.
-Værktøjet gætter ikke på brugerens vegne.
+**Unspecified is a state of its own.** `waitCause: null` means the user has not answered, and it
+never falls back to a default. That is essential to the credibility: if it did, every step would
+count as the chosen default, the human share would always read 100%, and every countermeasure would
+be the same one. Unspecified waiting is therefore counted as neither human nor technical, it is
+shown as a hatched field in the bar, it is held out of the potential calculation, and a delay with
+no cause gets a prompt instead of a borrowed countermeasure. The tool does not guess on the user's
+behalf.
 
-### Rundingsreglen
+### The rounding rule
 
-Beregnede tal må have én decimal. Estimerede tal må ikke — de vises som hele dage eller som et
-interval. `fmt` er til beregnede tal, `fmtEstimate` og `fmtEstimateRange` til skøn. Et skøn, der
-ser præcist ud, lover mere end det kan holde.
+Calculated figures may carry one decimal. Estimates may not — they are shown as whole days or as a
+range. `fmt` is for calculated figures, `fmtEstimate` and `fmtEstimateRange` for estimates. An
+estimate that looks precise promises more than it can keep.
 
-### Skøn
+### Estimates
 
-- **Potentialet** (`computeImprovement`) tager de tre største spildposter og anvender
-  besparelsesintervallet for hver årsag. Resultatet er et interval, ikke et tal.
-- **Readiness** lægger en multiplikator (0,8 til 2,0 ud fra en score på 0-10) på **kun**
-  kundesidens ventetid. Kundens datakvalitet påvirker ikke, hvor hurtigt jeres eget team arbejder.
-  Hvert svar, der scorer dårligt, giver et konkret modtræk.
-- **Adoptionsgabet** er brugerens eget skøn over, hvor lang tid der går fra go-live, til løsningen
-  bruges i det daglige. Det lægges til time-to-value og tegnes som en stiplet zone på tidslinjen.
+- **The potential** (`computeImprovement`) takes the three biggest delays and applies the saving
+  range for each cause. The result is a range, not a single figure.
+- **Readiness** applies a multiplier (0.8 to 2.0 from a score of 0-10) to **only** customer-side
+  waiting. The customer's data quality does not affect how fast your own team works. Each answer
+  that scores badly produces a concrete countermeasure.
+- **The adoption gap** is the user's own estimate of how long it takes from go-live until the
+  solution is used day to day. It is added to time-to-value and drawn as a dashed zone on the
+  timeline.
 
-Det forudindlæste eksempel giver 22,5 dages gennemløbstid, 26 timers arbejde, 15,6 %
-flow-effektivitet, fire overleveringer, 13,7 dages time-to-value og 89,5 % menneskelig ventetid
-(2 af 19 ventedage er teknisk). Håndteres de tre største spildposter, lander forløbet på cirka
-13-16 dage, og modtrækket peger på kalenderventetiden først.
+The preloaded example gives 22.5 days of lead time, 26 hours of work, 15.6% flow efficiency, four
+handoffs, 13.7 days of time-to-value and 89.5% human wait time (2 of 19 waiting days are technical).
+Handle the three biggest delays and the flow lands at roughly 13-16 days, with the recommendation
+pointing at the calendar waiting first.
 
-## Deling og persistens
+## Sharing and persistence
 
-- **localStorage** gemmer arbejdet, så et refresh ikke koster noget. Er det slået fra, kører
-  værktøjet videre uden.
-- **Deling** koder hele forløbet ind i URL'ens hash som base64. Intet forlader browseren.
-  Så snart brugeren retter noget efter at have delt, fjernes hashen igen — adressen må ikke
-  beskrive en tilstand, der ikke længere gælder.
-- **Ældre links og gemt arbejde** fra version 1 har ingen ventetidsårsager og intet adoptionstal.
-  De indlæses stadig, men årsagen forbliver **uoplyst** frem for at blive gættet, og
-  adoptionsfeltet står tomt. Værktøjet beder om de manglende svar i stedet for at opfinde dem.
+- **localStorage** keeps the work, so a refresh costs nothing. If it is switched off, the tool
+  carries on without it.
+- **Sharing** encodes the whole flow into the URL hash as base64. Nothing leaves the browser. As
+  soon as the user changes anything after sharing, the hash is removed again — the address must not
+  describe a state that no longer holds.
+- **Older links and saved work** still load. Links from version 1 carry no wait causes and no
+  adoption figure; the cause stays **unspecified** rather than being guessed. Links from the Danish
+  release carry Danish keys, which are translated on the way in (`src/persist.js`), so those links
+  keep working. A stored copy of the Danish demo that was never edited is replaced with the English
+  example, so nobody meets an English page with Danish step names.
 
 ## Deploy
 
@@ -117,15 +122,14 @@ flow-effektivitet, fire overleveringer, 13,7 dages time-to-value og 89,5 % menne
 npm run deploy
 ```
 
-Bygger og pusher `dist/` til `gh-pages`-branchen. Siden ligger på
-<https://omarslaiman.github.io/Repodo/>.
+Builds and pushes `dist/` to the `gh-pages` branch.
 
-## Bevidste fravalg
+## Deliberate omissions
 
-Ingen brugerkonti, intet skabelonbibliotek, ingen AI-integration, ingen sammenligning af flere
-forløb og ingen omkostningsberegning. Én ting, gjort færdig.
+No user accounts, no template library, no AI integration, no comparison of several flows and no cost
+calculation. One thing, finished.
 
-PDF-eksport sker gennem browserens egen udskrivning (`window.print()` plus et print-stylesheet)
-frem for et tredjepartsbibliotek til DOM-til-billede.
+PDF export goes through the browser's own printing (`window.print()` plus a print stylesheet) rather
+than a third-party DOM-to-image library.
 
-Bygget af Omar Slaiman.
+Built by Omar Slaiman.

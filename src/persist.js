@@ -1,8 +1,38 @@
-// Persistens og deling. Begge dele er bekvemmeligheder: fejler de, koerer app'en videre.
+// Persistence and sharing. Both are conveniences: if they fail, the app carries on.
 
-import { CAUSE_BY_KEY, isBlank } from './model.js'
+import { CAUSE_BY_KEY, OWNER_KEYS, isBlank } from './model.js'
 
 const STORAGE_KEY = 'onboarding-flow-analyser/v1'
+
+// The tool shipped in Danish first, and links made then are still in circulation.
+// Translating the keys on the way in costs a few lines and keeps those links alive.
+const LEGACY_OWNERS = { os: 'us', kunde: 'customer', tredjepart: 'thirdParty' }
+const LEGACY_CAUSES = {
+  kalender: 'calendar',
+  beslutning: 'decision',
+  leverance: 'delivery',
+  prioritering: 'priority',
+  teknisk: 'technical',
+}
+
+// The Danish example as it was saved. A visitor who only ever looked at the demo
+// has exactly this in storage; replacing it keeps them from meeting an English
+// page with Danish step names. Anything edited is the user's own work and stays.
+const DANISH_EXAMPLE_NAMES = [
+  'Kickoff-møde og forventningsafstemning',
+  'Kunden leverer kontoplan og systemadgange',
+  'Opsætning af integration',
+  'Datavalidering og fejlsøgning',
+  'Kunden godkender kontoplansmapping',
+  'Første automatiske afstemning kører',
+  'Træning af kundens team',
+  'Go-live og overdragelse til drift',
+]
+
+export function isUntouchedDanishExample(steps) {
+  if (!steps || steps.length !== DANISH_EXAMPLE_NAMES.length) return false
+  return steps.every((s, i) => s.name === DANISH_EXAMPLE_NAMES[i])
+}
 
 function encodeUtf8ToBase64(str) {
   const bytes = new TextEncoder().encode(str)
@@ -18,7 +48,7 @@ function decodeBase64ToUtf8(b64) {
   return new TextDecoder().decode(bytes)
 }
 
-// Kort noeglenavne, saa link-laengden holdes nede.
+// Short key names, to keep the link length down.
 function pack(state) {
   return {
     s: state.steps.map((st) => [
@@ -34,18 +64,28 @@ function pack(state) {
   }
 }
 
-// Aeldre links og gemt arbejde har kun fem felter pr. traek og intet adoptionstal.
-// De skal stadig virke, men aarsagen forbliver uoplyst frem for at blive gaettet.
+function readOwner(raw) {
+  if (OWNER_KEYS.includes(raw)) return raw
+  return LEGACY_OWNERS[raw] ?? 'us'
+}
+
+function readCause(raw) {
+  if (CAUSE_BY_KEY[raw]) return raw
+  return LEGACY_CAUSES[raw] ?? null
+}
+
+// Older links and saved work carry only five fields per step and no adoption
+// figure. They still load, but the cause stays unspecified rather than guessed.
 function unpack(raw) {
   if (!raw || !Array.isArray(raw.s)) return null
   const steps = raw.s.map((row, i) => ({
     id: `u${i}`,
     name: String(row[0] ?? ''),
-    owner: ['os', 'kunde', 'tredjepart'].includes(row[1]) ? row[1] : 'os',
+    owner: readOwner(row[1]),
     processHours: Number(row[2]) || 0,
     waitDaysBefore: Number(row[3]) || 0,
     isValueMoment: !!row[4],
-    waitCause: CAUSE_BY_KEY[row[5]] ? row[5] : null,
+    waitCause: readCause(row[5]),
   }))
   return {
     steps,
@@ -76,7 +116,7 @@ export function saveLocal(state) {
   try {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(pack(state)))
   } catch {
-    /* localStorage kan vaere slaaet fra. Det er ikke et krav. */
+    /* localStorage may be switched off. It is a convenience, not a requirement. */
   }
 }
 
@@ -93,6 +133,6 @@ export function clearLocal() {
   try {
     window.localStorage.removeItem(STORAGE_KEY)
   } catch {
-    /* ignoreres bevidst */
+    /* deliberately ignored */
   }
 }

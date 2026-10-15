@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { OWNER_LABEL, buildBlocks, causeOrUnspecified } from '../model.js'
+import { OWNER_KEYS, OWNER_LABEL, buildBlocks, causeOrUnspecified } from '../model.js'
 import { fmt, dayWord } from '../format.js'
 
 const PAD_LEFT_LANES = 92
@@ -21,8 +21,9 @@ const NAVY = '#1F3864'
 
 const FALLBACK_WIDTH = 880
 
-// Callback-ref frem for useEffect: tidslinjen forsvinder helt, naar der ikke er trin,
-// og et effekt med tom afhaengighedsliste ville aldrig maale igen, naar den kommer tilbage.
+// A callback ref rather than useEffect: the timeline disappears entirely when there
+// are no steps, and an effect with an empty dependency list would never measure again
+// once it came back.
 function useContainerWidth() {
   const [width, setWidth] = useState(FALLBACK_WIDTH)
   const nodeRef = useRef(null)
@@ -42,7 +43,7 @@ function useContainerWidth() {
     observerRef.current = ro
   }, [])
 
-  // Reservevej for browsere uden ResizeObserver.
+  // Fallback for browsers without ResizeObserver.
   useEffect(() => {
     if (typeof ResizeObserver !== 'undefined') return
     const onResize = () => {
@@ -55,7 +56,7 @@ function useContainerWidth() {
   return [ref, width]
 }
 
-// Ca. 6,4 px pr. tegn ved 12 px systemfont. Groft, men godt nok til at undgaa overloeb.
+// Roughly 6.4 px per character at a 12 px system font. Crude, but good enough to avoid overflow.
 function truncate(text, availablePx) {
   const max = Math.floor((availablePx - 12) / 6.4)
   if (max < 3) return ''
@@ -75,16 +76,16 @@ export default function Timeline({ steps, metrics, svgRef, adoptionDays = null }
 
   const blocks = buildBlocks(steps)
   const total = metrics.totalLeadTimeDays
-  // Adoptionsperioden ligger efter go-live, men hoerer med paa den samme akse.
+  // The adoption period sits after go-live, but belongs on the same axis.
   const adoption = Number.isFinite(adoptionDays) && adoptionDays > 0 ? adoptionDays : 0
   const span = total + adoption
 
-  const lanes = showLanes
-    ? ['os', 'kunde', 'tredjepart'].filter((o) => steps.some((s) => s.owner === o))
-    : ['__all__']
-  const laneOf = (owner) => (showLanes ? Math.max(0, lanes.indexOf(owner)) : 0)
+  const laneKeys = OWNER_KEYS.filter((o) => steps.some((s) => s.owner === o))
+  const useLanes = showLanes && laneKeys.length > 0
+  const lanes = useLanes ? laneKeys : ['__all__']
+  const laneOf = (owner) => (useLanes ? Math.max(0, lanes.indexOf(owner)) : 0)
 
-  const padLeft = showLanes ? PAD_LEFT_LANES : PAD_LEFT_FLAT
+  const padLeft = useLanes ? PAD_LEFT_LANES : PAD_LEFT_FLAT
   const minWidth = padLeft + PAD_RIGHT + Math.max(420, steps.length * 44)
   const width = Math.max(containerWidth, minWidth)
   const chartW = width - padLeft - PAD_RIGHT
@@ -99,12 +100,12 @@ export default function Timeline({ steps, metrics, svgRef, adoptionDays = null }
     return (
       <section className="card" aria-labelledby="timeline-heading">
         <div className="card-head">
-          <h2 id="timeline-heading">Tidslinje</h2>
+          <h2 id="timeline-heading">Timeline</h2>
         </div>
         <div className="card-body">
           <p className="hint">
-            Tidslinjen tegnes, så snart der er trin med tid i. Bredden følger kalendertiden, så
-            arbejde og ventetid kan sammenlignes direkte.
+            The timeline is drawn as soon as there are steps with time in them. The width follows
+            calendar time, so work and waiting can be compared directly.
           </p>
         </div>
       </section>
@@ -115,9 +116,9 @@ export default function Timeline({ steps, metrics, svgRef, adoptionDays = null }
   const ticks = []
   for (let d = 0; d <= span + 1e-9; d += tickStep) ticks.push(Math.round(d * 1000) / 1000)
 
-  // Overleveringer: hvor ejerskabet skifter mellem to trin i traek.
+  // Handoffs: where ownership changes between two consecutive steps.
   const handoffMarks = []
-  if (showLanes) {
+  if (useLanes) {
     let cursor = 0
     const startOf = []
     for (const s of steps) {
@@ -144,10 +145,10 @@ export default function Timeline({ steps, metrics, svgRef, adoptionDays = null }
   return (
     <section className="card" aria-labelledby="timeline-heading">
       <div className="card-head">
-        <h2 id="timeline-heading">Tidslinje</h2>
+        <h2 id="timeline-heading">Timeline</h2>
         <label className="note" style={{ display: 'inline-flex', gap: 6, alignItems: 'center', cursor: 'pointer' }}>
           <input type="checkbox" checked={showLanes} onChange={(e) => setShowLanes(e.target.checked)} />
-          Vis baner pr. ejer
+          Show lanes by owner
         </label>
       </div>
       <div className="card-body">
@@ -161,13 +162,13 @@ export default function Timeline({ steps, metrics, svgRef, adoptionDays = null }
             fontFamily="-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Arial, sans-serif"
             role="img"
             aria-label={
-              'Tidslinje over forløbet. ' +
+              'Timeline of the flow. ' +
               fmt(metrics.totalLeadTimeDays, 1) +
-              ' dages gennemløbstid, hvoraf ' +
+              ' days of lead time, of which ' +
               fmt(metrics.totalProcessDays, 1) +
-              ' dage er arbejde og ' +
+              ' days are work and ' +
               fmt(metrics.totalWaitDays, 1) +
-              ' dage er ventetid.'
+              ' days are waiting.'
             }
           >
             <rect x="0" y="0" width={width} height={height} fill="#FFFFFF" />
@@ -183,7 +184,7 @@ export default function Timeline({ steps, metrics, svgRef, adoptionDays = null }
                   stroke={LANE_STROKE}
                   rx="3"
                 />
-                {showLanes ? (
+                {useLanes ? (
                   <text
                     x={padLeft - 12}
                     y={laneY(i) + LANE_H / 2 + 4}
@@ -199,7 +200,7 @@ export default function Timeline({ steps, metrics, svgRef, adoptionDays = null }
 
             {handoffMarks.map((h, i) => (
               <g key={'h' + i}>
-                <title>{'Overlevering: ' + h.label}</title>
+                <title>{'Handoff: ' + h.label}</title>
                 <line
                   x1={h.x}
                   y1={h.from}
@@ -220,8 +221,8 @@ export default function Timeline({ steps, metrics, svgRef, adoptionDays = null }
               const isWork = b.kind === 'work'
               const h = isWork ? LANE_H - 16 : LANE_H - 24
               const y = y0 + (LANE_H - h) / 2
-              // Arbejdsblokke er som regel for smalle til et navn. Nummeret binder dem
-              // til trinlisten, uden at tage plads fra pointen.
+              // Work blocks are usually too narrow for a name. The number ties them to
+              // the step list without taking space away from the point.
               const label = isWork
                 ? bw >= 64
                   ? truncate(b.name, bw)
@@ -233,8 +234,8 @@ export default function Timeline({ steps, metrics, svgRef, adoptionDays = null }
                   : ''
               const centered = isWork && bw < 64
               const tip = isWork
-                ? b.name + ' · ' + fmt(b.hours, 1) + ' timers arbejde · ' + OWNER_LABEL[b.owner]
-                : 'Ventetid før "' +
+                ? b.name + ' · ' + fmt(b.hours, 1) + ' hours of work · ' + OWNER_LABEL[b.owner]
+                : 'Waiting before "' +
                   b.name +
                   '" · ' +
                   fmt(b.days, 1) +
@@ -242,7 +243,7 @@ export default function Timeline({ steps, metrics, svgRef, adoptionDays = null }
                   dayWord(b.days) +
                   ' · ' +
                   OWNER_LABEL[b.owner] +
-                  ' · årsag: ' +
+                  ' · cause: ' +
                   causeOrUnspecified(b.cause).label.toLowerCase()
               return (
                 <g key={i}>
@@ -274,11 +275,11 @@ export default function Timeline({ steps, metrics, svgRef, adoptionDays = null }
             {adoption > 0 ? (
               <g>
                 <title>
-                  {'Adoptionsperiode · ' +
+                  {'Adoption period · ' +
                     fmt(adoption, adoption % 1 === 0 ? 0 : 1) +
                     ' ' +
                     dayWord(adoption) +
-                    ' fra go-live til løsningen bruges i det daglige'}
+                    ' from go-live until the solution is used day to day'}
                 </title>
                 <rect
                   x={x(total)}
@@ -301,7 +302,7 @@ export default function Timeline({ steps, metrics, svgRef, adoptionDays = null }
                     fill={NAVY}
                     fontWeight="600"
                   >
-                    Adoptionsperiode
+                    Adoption period
                   </text>
                 ) : null}
               </g>
@@ -327,7 +328,7 @@ export default function Timeline({ steps, metrics, svgRef, adoptionDays = null }
                   fill={NAVY}
                   fontWeight="600"
                 >
-                  {'Første værdi · ' + fmt(ttv, 1) + ' ' + dayWord(ttv)}
+                  {'First value · ' + fmt(ttv, 1) + ' ' + dayWord(ttv)}
                 </text>
               </g>
             ) : null}
@@ -354,31 +355,32 @@ export default function Timeline({ steps, metrics, svgRef, adoptionDays = null }
               </g>
             ))}
             <text x={padLeft + chartW} y={lanesBottom + 30} textAnchor="end" fontSize="11" fill={MUTED}>
-              kalenderdage
+              calendar days
             </text>
           </svg>
         </div>
 
         <div className="legend">
           <span>
-            <i className="swatch" style={{ background: WORK_FILL }} /> Arbejde
+            <i className="swatch" style={{ background: WORK_FILL }} /> Work
           </span>
           <span>
-            <i className="swatch" style={{ background: WAIT_FILL, borderColor: WAIT_STROKE }} /> Ventetid
+            <i className="swatch" style={{ background: WAIT_FILL, borderColor: WAIT_STROKE }} /> Waiting
           </span>
-          {showLanes ? <span>Stiplet lodret linje: overlevering</span> : null}
+          {useLanes ? <span>Dashed vertical line: a handoff</span> : null}
           {adoption > 0 ? (
             <span>
               <i className="swatch" style={{ background: '#F2F4F8', borderColor: NAVY, borderStyle: 'dashed' }} />{' '}
-              Adoptionsperiode
+              Adoption period
             </span>
           ) : null}
-          <span>Hold musen over en blok for detaljer</span>
+          <span>Hover a block for detail</span>
         </div>
 
         <p className="chart-caption">
-          Bredden følger kalendertiden. De mørke blokke er den tid, nogen faktisk arbejder;
-          de lyse er den tid, opgaven ligger stille. Forholdet mellem dem er flow-effektiviteten.
+          The width follows calendar time. The dark blocks are the time someone is actually
+          working; the light ones are the time the task sits still. The ratio between them is the
+          flow efficiency.
         </p>
       </div>
     </section>

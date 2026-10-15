@@ -46,41 +46,41 @@ export default function Metrics({ metrics, stepCount }) {
   return (
     <section className="card" aria-labelledby="results-heading">
       <div className="card-head">
-        <h2 id="results-heading">Nøgletal</h2>
-        <p className="note">Opdateres løbende</p>
+        <h2 id="results-heading">Key figures</h2>
+        <p className="note">Updated as you edit</p>
       </div>
       <div className="card-body">
         <div className="kpi-grid">
           <Kpi
             value={hasData ? fmt(totalLeadTimeDays, 1) : '—'}
-            suffix={hasData ? 'dage' : ''}
-            label="Gennemløbstid"
-            sub="fra start til go-live"
+            suffix={hasData ? 'days' : ''}
+            label="Lead time"
+            sub="from start to go-live"
             note={
               hasData
-                ? 'Heraf er ' +
+                ? 'Of that, ' +
                   fmt(totalWaitDays, 1) +
                   ' ' +
                   dayWord(totalWaitDays) +
-                  ' ventetid og ' +
+                  ' of waiting and ' +
                   fmt(totalProcessDays, 1) +
                   ' ' +
                   dayWord(totalProcessDays) +
-                  ' faktisk arbejde.'
-                : 'Tilføj trin for at få et tal.'
+                  ' of actual work.'
+                : 'Add steps to get a figure.'
             }
           />
 
           <Kpi
             value={ttvDays !== null ? fmt(ttvDays, 1) : null}
-            suffix="dage"
-            undefinedText={ttvDays === null ? 'ikke defineret' : null}
+            suffix="days"
+            undefinedText={ttvDays === null ? 'not defined' : null}
             label="Time-to-value"
-            sub="til kunden ser værdi"
+            sub="until the customer sees value"
             note={
               ttvDays !== null
-                ? 'Time-to-value er gennemløbstid frem til første værdi. Samme størrelse, andet fagsprog.'
-                : 'Marker det trin, hvor kunden første gang oplever reel værdi. At tallet mangler, er i sig selv en oplysning: mange forløb har aldrig fået det defineret.'
+                ? 'Time-to-value is lead time up to first value. The same quantity, a different vocabulary.'
+                : 'Mark the step where the customer first experiences real value. The figure being missing is itself a finding: many flows have never had it defined.'
             }
           />
 
@@ -88,21 +88,21 @@ export default function Metrics({ metrics, stepCount }) {
             value={flowEfficiency !== null ? fmt(flowEfficiency, 1) : '—'}
             suffix={flowEfficiency !== null ? '%' : ''}
             valueClass={flowStatus(flowEfficiency)}
-            label="Flow-effektivitet"
-            sub="af tiden arbejdes der"
-            note="Under 15 % er normalt i serviceprocesser. Det betyder, at forbedringen sjældent ligger i at arbejde hurtigere."
+            label="Flow efficiency"
+            sub="of the time, work is happening"
+            note="Below 15% is normal in service processes. It means the improvement rarely lies in working faster."
           />
 
           <Kpi
             value={stepCount > 0 ? fmtInt(handoffs) : '—'}
-            label="Overleveringer"
-            sub="gange arbejdet skifter hænder"
-            note="Hvert skift er et sted, hvor opgaven kan lægge sig til at vente eller blive misforstået."
+            label="Handoffs"
+            sub="times the work changes hands"
+            note="Every change of hands is a place where the task can settle in to wait or be misunderstood."
           />
 
-          {/* Det skarpeste tal i vaerktoejet faar sin egen raekke. Det bygger paa
-              brugerens egne svar, saa uoplyst ventetid maa ikke taelle med som
-              menneskelig - saa ville tallet altid vise 100 %. */}
+          {/* The sharpest figure in the tool gets its own row. It rests on the
+              user's own answers, so unspecified wait must not count as human -
+              that would make the figure read 100 % every time. */}
           <Kpi
             className="kpi-span"
             value={humanWaitShare !== null ? fmt(humanWaitShare, 1) : null}
@@ -110,83 +110,84 @@ export default function Metrics({ metrics, stepCount }) {
             undefinedText={
               humanWaitShare === null
                 ? totalWaitDays > 0
-                  ? 'ingen årsager sat endnu'
-                  : 'ingen ventetid registreret'
+                  ? 'no causes set yet'
+                  : 'no waiting recorded'
                 : null
             }
-            label="Menneskelig ventetid"
+            label="Human wait time"
             sub={
               humanWaitShare !== null
                 ? fmt(humanWaitDays, 1) +
-                  ' af ' +
+                  ' of ' +
                   fmt(classifiedWaitDays, 1) +
-                  ' klassificerede ventedage skyldes kalendere, beslutninger, leverancer eller prioritering' +
+                  ' classified waiting days come down to calendars, decisions, deliveries or priority' +
                   (unspecifiedWaitDays > 0
-                    ? '. ' + fmt(unspecifiedWaitDays, 1) + ' dage mangler stadig en årsag'
+                    ? '. ' + fmt(unspecifiedWaitDays, 1) + ' days still have no cause'
                     : '')
                 : totalWaitDays > 0
-                  ? 'sæt feltet "fordi" på trinnene med ventetid'
-                  : 'registrér ventetid for at få et tal'
+                  ? 'set the "because" field on the steps that have waiting'
+                  : 'record some waiting to get a figure'
             }
             note={
               humanWaitShare === null && totalWaitDays > 0
-                ? 'Værktøjet gætter ikke, om ventetid er menneskelig eller teknisk — det er dit svar i feltet "fordi" på hvert trin. Fire af de fem årsager er menneskelige; kun "teknisk" er maskintid.'
-                : 'Opdelingen kommer fra feltet "fordi" på hvert trin, ikke fra en antagelse. Fire af de fem årsager er menneskelige; kun "teknisk" er maskintid. Det er dér, forkortelsen er lettest at hente — man kan ikke automatisere sig ud af et forløb, hvor næsten al ventetid er menneskelig.'
+                ? 'The tool does not guess whether waiting is human or technical — that is your answer in the "because" field on each step. Four of the five causes are human; only "technical" is machine time.'
+                : 'The split comes from the "because" field on each step, not from an assumption. Four of the five causes are human; only "technical" is machine time. That is also where the shortening is easiest to find — you cannot automate your way out of a flow where nearly all the waiting is human.'
             }
           />
         </div>
 
         <details className="derivation">
-          <summary>Sådan er tallene regnet ud</summary>
+          <summary>How these figures are calculated</summary>
           <div className="derivation-body">
             <table>
               <tbody>
                 <tr>
-                  <td>Arbejdstid i alt</td>
-                  <td>{fmt(totalProcessHours, 1)} timer</td>
+                  <td>Total work</td>
+                  <td>{fmt(totalProcessHours, 1)} hours</td>
                 </tr>
                 <tr>
-                  <td>Omregnet til dage ved {fmt(HOURS_PER_DAY, 1)} timer pr. arbejdsdag</td>
-                  <td>{fmt(totalProcessDays, 2)} dage</td>
+                  <td>Converted to days at {fmt(HOURS_PER_DAY, 1)} hours per working day</td>
+                  <td>{fmt(totalProcessDays, 2)} days</td>
                 </tr>
                 <tr>
-                  <td>Ventetid i alt</td>
-                  <td>{fmt(totalWaitDays, 1)} dage</td>
+                  <td>Total waiting</td>
+                  <td>{fmt(totalWaitDays, 1)} days</td>
                 </tr>
                 <tr className="rule">
-                  <td>Gennemløbstid = ventetid + arbejdstid</td>
-                  <td>{fmt(totalLeadTimeDays, 2)} dage</td>
+                  <td>Lead time = waiting + work</td>
+                  <td>{fmt(totalLeadTimeDays, 2)} days</td>
                 </tr>
                 <tr>
-                  <td>Flow-effektivitet = arbejdstid delt med gennemløbstid</td>
-                  <td>{flowEfficiency !== null ? fmt(flowEfficiency, 1) + ' %' : '—'}</td>
+                  <td>Flow efficiency = work divided by lead time</td>
+                  <td>{flowEfficiency !== null ? fmt(flowEfficiency, 1) + '%' : '—'}</td>
                 </tr>
                 <tr>
-                  <td>Time-to-value = alt til og med trinnet markeret som første værdi</td>
-                  <td>{ttvDays !== null ? fmt(ttvDays, 2) + ' dage' : 'ikke defineret'}</td>
+                  <td>Time-to-value = everything up to and including the step marked as first value</td>
+                  <td>{ttvDays !== null ? fmt(ttvDays, 2) + ' days' : 'not defined'}</td>
                 </tr>
                 <tr>
-                  <td>Overleveringer = antal gange ejerskabet skifter mellem to trin i træk</td>
+                  <td>Handoffs = times ownership changes between two consecutive steps</td>
                   <td>{fmtInt(handoffs)}</td>
                 </tr>
                 <tr>
-                  <td>Ventetid med en årsag sat</td>
-                  <td>{fmt(classifiedWaitDays, 1)} dage</td>
+                  <td>Waiting with a cause set</td>
+                  <td>{fmt(classifiedWaitDays, 1)} days</td>
                 </tr>
                 <tr>
-                  <td>Ventetid uden årsag, tælles ikke med nogen af stederne</td>
-                  <td>{fmt(unspecifiedWaitDays, 1)} dage</td>
+                  <td>Waiting without a cause, counted in neither column</td>
+                  <td>{fmt(unspecifiedWaitDays, 1)} days</td>
                 </tr>
                 <tr>
-                  <td>Menneskelig ventetid = klassificeret ventetid med anden årsag end teknisk</td>
-                  <td>{humanWaitShare !== null ? fmt(humanWaitDays, 1) + ' dage' : '—'}</td>
+                  <td>Human wait time = classified waiting with a cause other than technical</td>
+                  <td>{humanWaitShare !== null ? fmt(humanWaitDays, 1) + ' days' : '—'}</td>
                 </tr>
               </tbody>
             </table>
             <p>
-              En arbejdsdag regnes som {fmt(HOURS_PER_DAY, 1)} timer. Ventetid tastes i kalenderdage
-              og regnes ikke om, fordi kalenderen ikke holder fri. Alle tal her er regnet direkte af
-              det, du har tastet ind. Skøn er markeret som skøn og vises uden decimaler.
+              A working day counts as {fmt(HOURS_PER_DAY, 1)} hours. Waiting is entered in calendar
+              days and is not converted, because the calendar does not take time off. Every figure
+              here is calculated directly from what you have entered. Estimates are labelled as
+              estimates and shown without decimals.
             </p>
           </div>
         </details>
